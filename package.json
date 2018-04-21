@@ -1,7 +1,7 @@
 {
   "name": "regl-inertia-camera",
   "version": "1.0.0",
-  "description": "A camera for regl with inertia",
+  "description": "A 3D spherical coordinate camera for regl, for desktop and mobile",
   "main": "index.js",
   "scripts": {
     "start": "budo demo.js --open --live --host localhost -- -t es2020",
@@ -11,7 +11,13 @@
     "type" : "git"
   , "url" : "https://github.com/standardCyborg/regl-inertia-camera"
   },
-  "keywords": [],
+  "keywords": [
+    "regl",
+    "webgl",
+    "gl",
+    "camera",
+    "projection"
+  ],
   "author": "Ricky Reusser",
   "license": "MIT",
   "devDependencies": {
