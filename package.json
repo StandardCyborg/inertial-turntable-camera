@@ -1,6 +1,6 @@
 {
   "name": "regl-inertia-camera",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A 3D spherical coordinate camera for regl, for desktop and mobile",
   "main": "index.js",
   "scripts": {
