@@ -357,9 +357,13 @@ module.exports = function Camera(regl, opts) {
     }
     ev.originalEvent.preventDefault();
   }).on('touchstart', function (ev) {
-    ev.originalEvent.preventDefault();
+    if (state.enableRotation || state.enablePan || state.enableZoom) {
+      ev.originalEvent.preventDefault();
+    }
   }).on('touchend', function (ev) {
-    ev.originalEvent.preventDefault();
+    if (state.enableRotation || state.enablePan || state.enableZoom) {
+      ev.originalEvent.preventDefault();
+    }
   }).on('touchmove', function (ev) {
     if (state.enableRotation) {
       state.dTheta = ev.dx / 200 * state.rotationSpeed;
