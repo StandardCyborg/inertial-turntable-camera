@@ -222,6 +222,10 @@ module.exports = function Camera (regl, opts) {
         state.dPhi = ev.dy / 200 * state.rotationSpeed;
       }
       ev.originalEvent.preventDefault();
+    }).on('touchstart', function (ev) {
+      ev.originalEvent.preventDefault();
+    }).on('touchend', function (ev) {
+      ev.originalEvent.preventDefault();
     }).on('touchmove', function (ev) {
       if (state.enableRotation) {
         state.dTheta = ev.dx / 200 * state.rotationSpeed;

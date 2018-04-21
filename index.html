@@ -4,16 +4,16 @@
 <title>regl-inertia-camera</title>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
 <meta charset=utf-8><meta name="application-name" content="regl-inertia-camera">
-<meta name="subject" content="A camera for regl with inertia">
-<meta name="abstract" content="A camera for regl with inertia">
+<meta name="subject" content="A 3D spherical coordinate camera for regl, for desktop and mobile">
+<meta name="abstract" content="A 3D spherical coordinate camera for regl, for desktop and mobile">
 <meta name="twitter:title" content="regl-inertia-camera">
-<meta name="description" content="A camera for regl with inertia">
-<meta name="twitter:description" content="A camera for regl with inertia">
+<meta name="description" content="A 3D spherical coordinate camera for regl, for desktop and mobile">
+<meta name="twitter:description" content="A 3D spherical coordinate camera for regl, for desktop and mobile">
 <meta name="author" content="Ricky Reusser">
 <meta name="twitter:creator" content="Ricky Reusser">
 <meta name="twitter:card" content="summary">
 <meta property="og:title" content="regl-inertia-camera">
-<meta property="og:description" content="A camera for regl with inertia">
+<meta property="og:description" content="A 3D spherical coordinate camera for regl, for desktop and mobile">
 <meta property="article:author" content="Ricky Reusser">
 <style type="text/css">.github-corner{display:block;position:absolute;top:0;left:auto;right:0;z-index:10000}.github-corner svg{display:block}.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%{transform:rotate(0)}20%{transform:rotate(-25deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-25deg)}80%{transform:rotate(10deg)}100%{transform:rotate(0)}}@media(max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style></head>
 <body><a href="https://github.com/standardCyborg/regl-inertia-camera" class="github-corner" aria-label="View source on Github"><svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 250 250" fill="#fff">
@@ -355,6 +355,10 @@ module.exports = function Camera(regl, opts) {
       state.dTheta = ev.dx / 200 * state.rotationSpeed;
       state.dPhi = ev.dy / 200 * state.rotationSpeed;
     }
+    ev.originalEvent.preventDefault();
+  }).on('touchstart', function (ev) {
+    ev.originalEvent.preventDefault();
+  }).on('touchend', function (ev) {
     ev.originalEvent.preventDefault();
   }).on('touchmove', function (ev) {
     if (state.enableRotation) {
