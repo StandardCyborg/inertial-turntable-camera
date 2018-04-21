@@ -230,6 +230,14 @@ module.exports = function Camera (regl, opts) {
       if (state.enableRotation || state.enablePan || state.enableZoom) {
         ev.originalEvent.preventDefault();
       }
+    }).on('pinchstart', function (ev) {
+      if (state.enableRotation || state.enablePan || state.enableZoom) {
+        ev.originalEvent.preventDefault();
+      }
+    }).on('pinchend', function (ev) {
+      if (state.enableRotation || state.enablePan || state.enableZoom) {
+        ev.originalEvent.preventDefault();
+      }
     }).on('touchmove', function (ev) {
       if (state.enableRotation) {
         state.dTheta = ev.dx / 200 * state.rotationSpeed;
