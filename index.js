@@ -1,6 +1,6 @@
 'use strict';
 
-var interactionEvents = require('../orig-interaction-events');
+var interactionEvents = require('normalized-interaction-events');
 var transformMat4 = require('gl-vec3/transformMat4');
 var vec3RotateY = require('gl-vec3/rotateY');
 var vec3RotateX = require('gl-vec3/rotateX');
