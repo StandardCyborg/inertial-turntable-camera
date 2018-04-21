@@ -249,16 +249,16 @@ module.exports = function Camera (regl, opts) {
       var scaleFactor = state.distance * Math.tan(state.fovY * 0.5);
       state.x0 = ((ev.x0 / camera.width) * 2.0 - 1.0) * camera.aspectRatio * scaleFactor;
       state.y0 = -((ev.y0 / camera.height) * 2.0 - 1.0) * scaleFactor;
-      if (opts.enableZoom) {
+      if (state.enableZoom) {
         state.zoom = 1 - 0.5 * (ev.dsx + ev.dsy); 
       }
 
-      if (opts.enablePan) {
+      if (state.enablePan) {
         state.panX = -ev.dx * scaleFactor / camera.height * 2.0;
         state.panY = ev.dy * scaleFactor / camera.height * 2.0;
       }
 
-      if (opts.enableZoom || opts.enablePan) {
+      if (state.enableZoom || state.enablePan) {
         ev.originalEvent.preventDefault();
       }
     });
