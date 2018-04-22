@@ -4,7 +4,7 @@
   "description": "A 3D spherical coordinate camera for regl, for desktop and mobile",
   "main": "index.js",
   "scripts": {
-    "start": "budo demo.js --open --live --force-default-index -- -t es2020",
+    "start": "budo demo.js --open --host localhost --live --force-default-index -- -t es2020",
     "build": "browserify demo.js -t es2020 | indexhtmlify | html-inject-meta | html-inject-github-corner > index.html"
   },
   "repository": {
