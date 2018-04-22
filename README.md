@@ -2,6 +2,8 @@
 
 > A 3D spherical coordinate camera for regl, for desktop and mobile
 
+[Live demo](https://standardcyborg.github.io/regl-inertia-camera/)
+
 ## Introduction
 
 A 3D spherical coordinate camera with rotation, panning, zooming, and pivoting (i.e. yaw and pitch). Designed to function on desktop and mobile.
