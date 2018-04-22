@@ -45,52 +45,6 @@ function run(regl) {
     center: [0, 4, 0]
   });
 
-  var cpEl = document.createElement('div');
-  var helptext = document.createElement('div');
-  helptext.textContent = 'On desktop, drag to rotate; shift + drag to pan; meta + drag to pivot; mouswheel to zoom. On mobile, drag to rotate, pinch to zoom and pan.';
-  helptext.style.width = '360px';
-  helptext.style.background = 'rgb(35, 35, 35)';
-  helptext.style.color = 'rgb(235, 235, 235)';
-  helptext.style.padding = '5px 15px';
-  helptext.style.boxSizing = 'border-box';
-  helptext.style.opacity = '0.95';
-  helptext.style.fontFamily = "'Hack', monospace";
-  helptext.style.fontSize = '0.7em';
-  helptext.style.display = 'inline-block';
-
-  cpEl.appendChild(helptext);
-  document.body.appendChild(cpEl);
-  controlPanel([{ label: 'inertia', type: 'range', min: 0, max: 1000, step: 10, initial: camera.state.panDecayTime }, { label: 'fov', type: 'range', min: 5, max: 100, step: 1, initial: Math.round(180 / Math.PI * camera.state.fovY) }, { label: 'zoomAboutCursor', type: 'checkbox', initial: camera.state.zoomAboutCursor }, { label: 'rotateAboutCenter', type: 'checkbox', initial: camera.state.rotateAboutCenter }], {
-    root: cpEl,
-    width: 360
-  }).on('input', function (data) {
-    camera.state.zoomAboutCursor = data.zoomAboutCursor;
-    camera.state.panDecayTime = data.inertia;
-    camera.state.zoomDecayTime = data.inertia;
-    camera.state.rotationDecayTime = data.inertia;
-    camera.state.rotateAboutCenter = data.rotateAboutCenter;
-
-    // Hold the view constant as we change the fov
-    var prevYRange = camera.state.distance * Math.tan(camera.state.fovY * 0.5);
-    camera.state.fovY = data.fov * Math.PI / 180.0;
-    camera.state.distance = prevYRange / Math.tan(camera.state.fovY * 0.5);
-
-    camera.state.fovY = data.fov * Math.PI / 180;
-  });
-
-  cpEl.addEventListener('touchstart', function (e) {
-    return e.stopPropagation();
-  }, false);
-  cpEl.addEventListener('touchend', function (e) {
-    return e.stopPropagation();
-  }, false);
-  cpEl.addEventListener('touchmove', function (e) {
-    return e.stopPropagation();
-  }, false);
-  cpEl.addEventListener('touchcancel', function (e) {
-    return e.stopPropagation();
-  }, false);
-
   var r = 30.0;
   var drawGrid = regl({
     vert: '\n      precision mediump float;\n      attribute vec3 position;\n      varying vec2 p;\n      uniform mat4 projection, view;\n      varying vec3 n;\n      void main () {\n        p = position.xz;\n        gl_Position = projection * view * vec4(position, 1);\n      }',
@@ -131,6 +85,86 @@ function run(regl) {
   });
 
   window.addEventListener('resize', camera.resize, false);
+
+  var cpEl = document.createElement('div');
+  document.body.appendChild(cpEl);
+  var showHide;
+  if (true) {
+    showHide = document.createElement('button');
+    showHide.textContent = 'Show/hide controls';
+    cpEl.appendChild(showHide);
+    showHide.style.display = 'block';
+    showHide.style.width = '360px';
+    showHide.style.background = 'rgb(35, 35, 35)';
+    showHide.style.border = 'none';
+    showHide.style.position = 'relative';
+    showHide.style.borderRadius = '0';
+    showHide.style.padding = '5px 15px';
+    showHide.style.color = 'rgb(235, 235, 235)';
+    showHide.style.opacity = '0.95';
+    showHide.style.fontFamily = "'Hack', monospace";
+    showHide.style.cursor = 'pointer';
+    showHide.style.margin = '0';
+
+    showHide.addEventListener('click', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      if (cpContent.style.display === 'block') {
+        showHide.style.width = 'auto';
+        cpContent.style.display = 'none';
+      } else {
+        showHide.style.width = '360px';
+        cpContent.style.display = 'block';
+      }
+    });
+  }
+  var cpContent = document.createElement('div');
+  cpContent.style.display = 'block';
+  cpEl.appendChild(cpContent);
+
+  var helptext = document.createElement('div');
+  helptext.textContent = 'On desktop, drag to rotate; shift + drag to pan; meta + drag to pivot; mouswheel to zoom. On mobile, drag to rotate, pinch to zoom and pan.';
+  helptext.style.width = '360px';
+  helptext.style.background = 'rgb(35, 35, 35)';
+  helptext.style.color = 'rgb(235, 235, 235)';
+  helptext.style.padding = '5px 15px';
+  helptext.style.boxSizing = 'border-box';
+  helptext.style.opacity = '0.95';
+  helptext.style.fontFamily = "'Hack', monospace";
+  helptext.style.fontSize = '0.7em';
+  helptext.style.display = 'inline-block';
+
+  cpContent.appendChild(helptext);
+  controlPanel([{ label: 'inertia', type: 'range', min: 0, max: 1000, step: 10, initial: camera.state.panDecayTime }, { label: 'fov', type: 'range', min: 5, max: 100, step: 1, initial: Math.round(180 / Math.PI * camera.state.fovY) }, { label: 'zoomAboutCursor', type: 'checkbox', initial: camera.state.zoomAboutCursor }, { label: 'rotateAboutCenter', type: 'checkbox', initial: camera.state.rotateAboutCenter }], {
+    root: cpContent,
+    width: Math.min(window.innerWidth, 360)
+  }).on('input', function (data) {
+    camera.state.zoomAboutCursor = data.zoomAboutCursor;
+    camera.state.panDecayTime = data.inertia;
+    camera.state.zoomDecayTime = data.inertia;
+    camera.state.rotationDecayTime = data.inertia;
+    camera.state.rotateAboutCenter = data.rotateAboutCenter;
+
+    // Hold the view constant as we change the fov
+    var prevYRange = camera.state.distance * Math.tan(camera.state.fovY * 0.5);
+    camera.state.fovY = data.fov * Math.PI / 180.0;
+    camera.state.distance = prevYRange / Math.tan(camera.state.fovY * 0.5);
+
+    camera.state.fovY = data.fov * Math.PI / 180;
+  });
+
+  cpEl.addEventListener('touchstart', function (e) {
+    return e.stopPropagation();
+  }, false);
+  cpEl.addEventListener('touchend', function (e) {
+    return e.stopPropagation();
+  }, false);
+  cpEl.addEventListener('touchmove', function (e) {
+    return e.stopPropagation();
+  }, false);
+  cpEl.addEventListener('touchcancel', function (e) {
+    return e.stopPropagation();
+  }, false);
 }
 },{"./":2,"angle-normals":4,"bunny":52,"control-panel":67,"fail-nicely":125,"gl-vec3/copy":133,"regl":221}],2:[function(require,module,exports){
 'use strict';
