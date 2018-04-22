@@ -247,8 +247,8 @@ module.exports = function Camera (regl, opts) {
       }
     }).on('pinchmove', function (ev) {
       var scaleFactor = state.distance * Math.tan(state.fovY * 0.5);
-      state.x0 = ((ev.x0 / camera.width) * 2.0 - 1.0) * camera.aspectRatio * scaleFactor;
-      state.y0 = -((ev.y0 / camera.height) * 2.0 - 1.0) * scaleFactor;
+      state.x0 = ((ev.x / camera.width) * 2.0 - 1.0) * camera.aspectRatio * scaleFactor;
+      state.y0 = -((ev.y / camera.height) * 2.0 - 1.0) * scaleFactor;
       if (state.enableZoom) {
         state.zoom = 1 - 0.5 * (ev.zoomx + ev.zoomy); 
       }
