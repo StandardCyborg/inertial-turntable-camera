@@ -176,6 +176,8 @@ function run (regl) {
   cpEl.addEventListener('touchend', e => e.stopPropagation(), false);
   cpEl.addEventListener('touchmove', e => e.stopPropagation(), false);
   cpEl.addEventListener('touchcancel', e => e.stopPropagation(), false);
+  document.querySelector('.github-corner').addEventListener('touchstart', e => e.stopPropagation(), false);
+  document.querySelector('.github-corner').addEventListener('touchmove', e => e.stopPropagation(), false);
 
 
 }

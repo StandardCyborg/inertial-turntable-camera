@@ -168,6 +168,12 @@ function run(regl) {
   cpEl.addEventListener('touchcancel', function (e) {
     return e.stopPropagation();
   }, false);
+  document.querySelector('.github-corner').addEventListener('touchstart', function (e) {
+    return e.stopPropagation();
+  }, false);
+  document.querySelector('.github-corner').addEventListener('touchmove', function (e) {
+    return e.stopPropagation();
+  }, false);
 }
 },{"./":2,"angle-normals":4,"bunny":52,"control-panel":67,"fail-nicely":125,"gl-vec3/copy":133,"regl":222}],2:[function(require,module,exports){
 'use strict';
