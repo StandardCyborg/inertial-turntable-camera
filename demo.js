@@ -3,6 +3,7 @@ const angleNormals = require('angle-normals');
 const createCamera = require('./');
 const controlPanel = require('control-panel');
 const vec3Copy = require('gl-vec3/copy');
+const interactionEvents = require('normalized-interaction-events');
 const regl = require('regl')({
   extensions: ['oes_standard_derivatives'],
   pixelRatio: 0.25, //Math.min(1.5, window.devicePixelRatio),
@@ -13,6 +14,7 @@ const regl = require('regl')({
 function run (regl) {
   bunny.normals = angleNormals(bunny.cells, bunny.positions);
   const camera = window.camera = createCamera({
+    aspectRatio: window.innerWidth / window.innerHeight,
     element: regl._gl.canvas,
     distance: 20,
     center: [0, 4, 0],
@@ -82,23 +84,98 @@ function run (regl) {
     }
   });
 
-  regl.frame(({time}) => {
+  const wheelSpeed = 0.002;
+  const rotationSpeed = 0.005;
+  const size = {width: window.innerWidth, height: window.innerHeight};
+
+  interactionEvents(regl._gl.canvas)
+    .on('wheel', function (ev) {
+        var scaleFactor = camera.state.distance * Math.tan(camera.state.fovY * 0.5);
+
+        camera.zoom(
+          ((ev.x / size.width) * 2.0 - 1.0) * camera.state.aspectRatio * scaleFactor,
+          -((ev.y / size.height) * 2.0 - 1.0) * scaleFactor,
+          Math.exp(ev.dy * wheelSpeed) - 1.0
+        );
+
+        ev.originalEvent.preventDefault();
+    })
+    .on('mousemove', function (ev) {
+      if (ev.buttons !== 1) return;
+      if (!ev.dragging) return;
+
+      if (ev.mods.shift) {
+        var scaleFactor = camera.state.distance * Math.tan(camera.state.fovY * 0.5) / size.height * 2.0;
+        camera.pan(
+          -ev.dx * scaleFactor,
+          ev.dy * scaleFactor
+        );
+      } else if (ev.mods.meta) {
+        var scaleFactor = camera.state.fovY / size.height;
+        camera.pivot(
+          ev.dy * scaleFactor,
+          -ev.dx * scaleFactor
+        );
+      } else {
+        camera.rotate(
+          ev.dx * rotationSpeed,
+          ev.dy * rotationSpeed
+        );
+      }
+      ev.originalEvent.preventDefault();
+    })
+    .on('touchmove', function (ev) {
+      if (ev.dragging) {
+
+        camera.rotate(
+          ev.dx * rotationSpeed,
+          ev.dy * rotationSpeed
+        );
+
+        ev.originalEvent.preventDefault();
+      }
+    })
+    .on('pinchmove', function (ev) {
+      if (!ev.dragging) return;
+
+      var scaleFactor = camera.state.distance * Math.tan(camera.state.fovY * 0.5);
+
+      camera.zoom(
+        ((ev.x / size.width) * 2.0 - 1.0) * camera.state.aspectRatio * scaleFactor,
+        -((ev.y / size.height) * 2.0 - 1.0) * scaleFactor,
+        1 - 0.5 * (ev.zoomx + ev.zoomy)
+      );
+
+      scaleFactor *= 2.0 / size.height;
+      camera.pan(
+        -ev.dx * scaleFactor,
+        ev.dy * scaleFactor
+      );
+    })
+    .on('touchstart', ev => ev.originalEvent.preventDefault())
+    .on('touchend',  ev => ev.originalEvent.preventDefault())
+    .on('pinchstart', ev => ev.originalEvent.preventDefault())
+    .on('pinchend',  ev => ev.originalEvent.preventDefault());
+
+  regl.frame(({time, tick}) => {
     camera.update({
       near: camera.state.distance * 0.01,
       far: camera.state.distance * 2 + 200,
-      //panZ: 0.01
     })
 
     setCamera(camera, () => {
       if (!camera.state.dirty) return;
-      console.log('render');
       regl.clear({color: [0.8, 0.85, 0.9, 1], depth: 1});
       drawBunny();
       drawGrid();
     });
   });
 
-  window.addEventListener('resize', camera.resize, false);
+  window.addEventListener('resize', function () {
+    size.width = window.innerWidth;
+    size.height = window.innerHeight;
+    camera.resize(size.width / size.height);
+  }, false);
 
 
 

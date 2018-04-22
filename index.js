@@ -1,12 +1,10 @@
 'use strict';
 
-var interactionEvents = require('normalized-interaction-events');
 var transformMat4 = require('gl-vec3/transformMat4');
 var vec3RotateY = require('gl-vec3/rotateY');
 var vec3RotateX = require('gl-vec3/rotateX');
 var vec3Equals = require('gl-vec3/equals');
 var vec3Add = require('gl-vec3/add');
-var vec3Set = require('gl-vec3/set');
 var vec3ScaleAndAdd = require('gl-vec3/scaleAndAdd');
 var vec3Copy = require('gl-vec3/copy');
 var vec3Normalize = require('gl-vec3/normalize');
@@ -29,18 +27,10 @@ module.exports = function Camera (opts) {
   var willBeDirty = true;
 
   var state = {
+    aspectRatio: opts.aspectRatio ? opts.aspectRatio : 1,
+
     // Zoom about the cursor as opposed to the center of the scene
     zoomAboutCursor: opts.zoomAboutCursor === undefined ? true : opts.zoomAboutCursor,
-
-    // Rotate about the center of the view as opposed to the center of the screen
-    rotateAboutCenter: opts.rotateAboutCenter === undefined ? false : opts.rotateAboutCenter,
-
-    // Enable/disable a few types of interactions. We probably don't need
-    // to be more granular than this.
-    enableZoom: opts.enableZoom === undefined ? true : opts.enableZoom,
-    enablePivot: opts.enablePivot === undefined ? true : opts.enablePivot,
-    enablePan: opts.enablePan === undefined ? true : opts.enablePan,
-    enableRotation: opts.enableRotation === undefined ? true : opts.enableRotation,
 
     // Spherical coords!
     distance: opts.distance === undefined ? 10 : opts.distance,
@@ -52,19 +42,14 @@ module.exports = function Camera (opts) {
     near: opts.near === undefined ? 0.1 : opts.near,
     far: opts.far === undefined ? 100 : opts.far,
 
-    // Magic speeds :(
-    wheelSpeed: opts.wheelSpeed === undefined ? 1.0 : opts.wheelSpeed,
-    rotationSpeed: opts.rotationSpeed || 1.0,
-
     // Decay of inertia, in ms
     panDecayTime: opts.panDecayTime || 100,
     zoomDecayTime: opts.zoomDecayTime || 100,
     rotationDecayTime: opts.rotationDecayTime || 100,
 
-    // 
     up: opts.up || new Float32Array([0, 1, 0]),
     center: opts.center || new Float32Array(3),
-    rotationCenter: opts.rotationCenter || opts.center || new Float32Array(3),
+    rotationCenter: opts.rotationCenter || opts.center && opts.center.slice() || new Float32Array(3),
 
     // Current interactions, which can be set directly. If setting directly, changes
     // will be additive to changes resulting from interactions.
@@ -139,7 +124,7 @@ module.exports = function Camera (opts) {
 
       // Check for and apply passive changes to the state vector. That is, if you
       // set camera.state.distance, this will automatically factor in those changes.
-      if (stateHasChanged()) {
+      if (stateVectorHasChanged()) {
         applyStateChanges();
       }
 
@@ -165,7 +150,11 @@ module.exports = function Camera (opts) {
     },
     taint: taint,
     resize: resize,
-    state: state
+    state: state,
+    rotate: rotate,
+    pivot: pivot,
+    pan: pan,
+    zoom: zoom,
   };
 
   camera.projection = new Float32Array(16);
@@ -173,11 +162,11 @@ module.exports = function Camera (opts) {
   camera.view = new Float32Array(16);
   camera.width = null;
   camera.height = null;
-  camera.aspectRatio = null;
   camera.eye = new Float32Array(3);
 
   // Vectors used but not exposed. Not they couldn't be, but you can get these
   // from the view matrix just fine.
+  var tmp = new Float32Array(3);
   var viewUp = new Float32Array(3);
   var viewRight = new Float32Array(3);
   var viewForward = new Float32Array(3);
@@ -191,12 +180,6 @@ module.exports = function Camera (opts) {
   };
   storeCurrentState();
 
-  function updateSize () {
-    var w = camera.width = element === window ? element.innerWidth : element.clientWidth;
-    var h = camera.height = element === window ? element.innerHeight : element.clientHeight;
-    camera.aspectRatio = w / h;
-  }
-
   function storeCurrentState () {
     vec3Copy(previousState.up, state.up);
     vec3Copy(previousState.center, state.center);
@@ -208,7 +191,7 @@ module.exports = function Camera (opts) {
     previousState.fovY = state.fovY;
   }
 
-  function stateHasChanged () {
+  function stateVectorHasChanged () {
     if (!vec3Equals(state.up, previousState.up)) return true;
     if (!vec3Equals(state.center, previousState.center)) return true;
     if (state.near !== previousState.near) return true;
@@ -253,10 +236,9 @@ module.exports = function Camera (opts) {
 
     // View + projection
     lookAt(camera.view, camera.eye, state.center, state.up);
-    perspective(camera.projection, state.fovY, camera.aspectRatio, state.near, state.far);
+    perspective(camera.projection, state.fovY, camera.state.aspectRatio, state.near, state.far);
 
-    // For convenience, but also because we already use this, so let's just compute it
-    // and make it right
+    // For convenience, but also because we already use this, so let's just expose it
     mat4Invert(camera.viewInv, camera.view);
   }
 
@@ -265,8 +247,8 @@ module.exports = function Camera (opts) {
     willBeDirty = true;
   }
 
-  function resize () {
-    updateSize();
+  function resize (aspectRatio) {
+    camera.state.aspectRatio = aspectRatio
     computeMatrices();
     taint();
   }
@@ -315,79 +297,28 @@ module.exports = function Camera (opts) {
   var accumulator = {};
   zeroChanges(accumulator);
 
-  // The meat of interaction. I've debated decoupling this so that the *user* (or at
-  // least a separate module) would implement this part. At the moment, it's just a bit
-  // too messy for that, but maybe in the future.
-  var ie = interactionEvents(element)
-    .on('wheel', function (ev) {
-      if (state.enableZoom) {
-        var scaleFactor = state.distance * Math.tan(state.fovY * 0.5);
-        state.mouseX = ((ev.x / camera.width) * 2.0 - 1.0) * camera.aspectRatio * scaleFactor;
-        state.mouseY = -((ev.y / camera.height) * 2.0 - 1.0) * scaleFactor;
-        accumulator.zoom += Math.exp(ev.dy * 0.002 * state.wheelSpeed) - 1.0;
-        ev.originalEvent.preventDefault();
-      }
-    }).on('mousemove', function (ev) {
-      if (ev.buttons !== 1) return;
-      if (!ev.dragging) return;
+  function pan (panX, panY) {
+    accumulator.panX += panX;
+    accumulator.panY += panY;
+    return camera;
+  }
 
-      if (ev.mods.shift && state.enablePan) {
-        var scaleFactor = state.distance * Math.tan(state.fovY * 0.5) / camera.height * 2.0;
-        accumulator.panX -= ev.dx * scaleFactor;
-        accumulator.panY += ev.dy * scaleFactor;
-      } else if (ev.mods.meta && state.enablePivot) {
-        var scaleFactor = state.fovY / camera.height;
-        accumulator.yaw -= ev.dx * scaleFactor;
-        accumulator.pitch += ev.dy * scaleFactor;
-      } else if (state.enableRotation) {
-        accumulator.dTheta += ev.dx / 200 * state.rotationSpeed;
-        accumulator.dPhi += ev.dy / 200 * state.rotationSpeed;
-      }
-      ev.originalEvent.preventDefault();
-    })
-    .on('touchstart', function (ev) {
-      if (state.enableRotation || state.enablePan || state.enableZoom) {
-        ev.originalEvent.preventDefault();
-      }
-    }).on('touchend', function (ev) {
-      if (state.enableRotation || state.enablePan || state.enableZoom) {
-        ev.originalEvent.preventDefault();
-      }
-    }).on('pinchstart', function (ev) {
-      if (state.enableRotation || state.enablePan || state.enableZoom) {
-        ev.originalEvent.preventDefault();
-      }
-    }).on('pinchend', function (ev) {
-      if (state.enableRotation || state.enablePan || state.enableZoom) {
-        ev.originalEvent.preventDefault();
-      }
-    }).on('touchmove', function (ev) {
-      if (ev.dragging && state.enableRotation) {
-        accumulator.dTheta += ev.dx / 200 * state.rotationSpeed;
-        accumulator.dPhi += ev.dy / 200 * state.rotationSpeed;
+  function zoom (mouseX, mouseY, zoom) {
+    accumulator.zoom += zoom;
+    state.mouseX = mouseX;
+    state.mouseY = mouseY;
+    return camera;
+  }
 
-        ev.originalEvent.preventDefault();
-      }
-    }).on('pinchmove', function (ev) {
-      if (!ev.dragging) return;
+  function pivot (pitch, yaw) {
+    accumulator.pitch += pitch;
+    accumulator.yaw += yaw;
+  }
 
-      var scaleFactor = state.distance * Math.tan(state.fovY * 0.5);
-      state.mouseX = ((ev.x / camera.width) * 2.0 - 1.0) * camera.aspectRatio * scaleFactor;
-      state.mouseY = -((ev.y / camera.height) * 2.0 - 1.0) * scaleFactor;
-      if (state.enableZoom) {
-        accumulator.zoom += 1 - 0.5 * (ev.zoomx + ev.zoomy); 
-      }
-
-      if (state.enablePan) {
-        accumulator.panX -= ev.dx * scaleFactor / camera.height * 2.0;
-        accumulator.panY += ev.dy * scaleFactor / camera.height * 2.0;
-      }
-
-      if (state.enableZoom || state.enablePan) {
-        ev.originalEvent.preventDefault();
-      }
-    });
-
+  function rotate (dTheta, dPhi) {
+    accumulator.dTheta += dTheta;
+    accumulator.dPhi += dPhi;
+  }
 
   function applyViewChanges (changes) {
     // Initialize a veiw-space transformation for panning and zooming
@@ -395,15 +326,24 @@ module.exports = function Camera (opts) {
 
     // Zoom about the mouse location in view-space
     if (state.zoomAboutCursor) {
-      mat4Translate(dView, dView, [changes.mouseX, changes.mouseY, 0]);
+      tmp[0] = changes.mouseX;
+      tmp[1] = changes.mouseY;
+      tmp[2] = 0;
+      mat4Translate(dView, dView, tmp);
     }
 
-    mat4Scale(dView, dView, [1 + changes.zoom, 1 + changes.zoom, 1]);
+    tmp[0] = 1 + changes.zoom;
+    tmp[1] = 1 + changes.zoom;
+    tmp[2] = 1;
+    mat4Scale(dView, dView, tmp);
 
     if (state.zoomAboutCursor) {
-      mat4Translate(dView, dView, [-changes.mouseX, -changes.mouseY, 0]);
+      tmp[0] = -changes.mouseX;
+      tmp[1] = -changes.mouseY;
+      tmp[2] = 0;
+      mat4Translate(dView, dView, tmp);
     }
-    
+
     // Pan the view matrix
     dView[12] += changes.panX;
     dView[13] += changes.panY;
@@ -417,7 +357,7 @@ module.exports = function Camera (opts) {
     if (state.rotateAboutCenter) {
       vec3Copy(state.rotationCenter, state.center);
     }
-    
+
     state.distance *= 1 + changes.zoom;
 
     var prevPhi = state.phi;
@@ -435,12 +375,21 @@ module.exports = function Camera (opts) {
     vec3RotateY(state.center, state.center, state.rotationCenter, -state.theta);
 
     if (changes.yaw !== 0 || changes.pitch !== 0) {
-      vec3Set(viewRight, camera.view[0], camera.view[4], camera.view[8]);
-      vec3Set(viewUp, camera.view[1], camera.view[5], camera.view[9]);
-      vec3Set(viewForward, camera.view[2], camera.view[6], camera.view[10]);
+      viewRight[0] = camera.view[0];
+      viewRight[1] = camera.view[4];
+      viewRight[2] = camera.view[8];
       vec3Normalize(viewRight, viewRight);
+
+      viewUp[0] = camera.view[1];
+      viewUp[1] = camera.view[5];
+      viewUp[2] = camera.view[9];
       vec3Normalize(viewUp, viewUp);
+
+      viewForward[0] = camera.view[2];
+      viewForward[1] = camera.view[6];
+      viewForward[2] = camera.view[10];
       vec3Normalize(viewForward, viewForward);
+
       vec3ScaleAndAdd(state.center, state.center, viewRight, Math.sin(changes.yaw) * state.distance);
       vec3ScaleAndAdd(state.center, state.center, viewUp, Math.sin(changes.pitch) * state.distance);
       vec3ScaleAndAdd(state.center, state.center, viewForward, (2 - Math.cos(changes.yaw) - Math.cos(changes.pitch)) * state.distance);
@@ -452,7 +401,7 @@ module.exports = function Camera (opts) {
     taint();
   }
 
-  camera.resize();
+  resize(camera.state.aspectRatio);
 
   return camera;
 }

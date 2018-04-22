@@ -33,7 +33,9 @@ requestAnimationFrame(() => {
   // camera.view => [...]
   // camera.projection => [...]
 
-  renderScene();
+  if (camera.state.dirty) {
+    renderScene();
+  }
 });
 ```
 
@@ -49,15 +51,25 @@ Returns a camera instance which sets camera projection and view matrix context a
 | ------ | ----- | ------ | ------- |
 | `element` | HTML element | `window` | element to which to attach |
 
-#### Methods: `camera.*()`
+#### Methods
 
-Finally, the returned camera contains the following methods:
+##### `camera.taint()`
 
-| Method | Meaning |
-| -------| ------- |
-| .taint() | Mark the view "dirty" to trigger drawing on the next frame. |
-| .resize() | Recompute the viewport size and aspect ratio and mark the view dirty |
-| .udpate([opts]) | Update the camera for the current frame |
+Mark the camera "dirty" so that the next update request will set `camera.state.dirty = true`, indicating the scene needs to be re-rendered.
+
+##### `camera.resize(aspectRatio)`
+
+Updates the aspect ratio (width / height) and mark the view dirty.
+
+##### `camera.update(stateChanges)`
+
+The update method applies the following sequence of operations:
+
+  1. Applies an object of stateChanges to `camera.state`
+  2. Applies changes detected in the camera state
+  3. Applies batched mouse interactions accumulate since the last update
+  4. Updates the view and projection matrices and the eye position
+  5. Sets `camera.state.dirty` to indicate whether the scene needs to be re-rendered
 
 
 #### Read-only values: `camera.*`
@@ -66,14 +78,11 @@ The returned camera contains the following _computed_ properties which will be o
 
 | Camera variable | Type | Meaning |
 | -------------- | ---- | ------- |
-| `aspectRatio` | Number | current aspect ratio |
 | `dirty` | Boolean | `true` | true when camera view has changed |
 | `eye` | vec3 | location of camera |
-| `height` | Number | current height of view |
 | `projection` | mat4 | projection matrix |
 | `view` | mat4 | view matrix |
 | `viewInv` | mat4 | inverese view matrix |
-| `width` | Number | current width of view |
 
 #### Read/writeable state: `camera.state.*`
 
@@ -81,14 +90,11 @@ The returned camera contains a `.state` property which contains the following st
 
 | State variable | Type | Default/Initial | Meaning |
 | -------------- | ---- | ------- | ------- |
+| `aspectRatio` | Number | current aspect ratio |
 | `center` | vec3 | `[0, 0, 0]` | point at the center of the view |
 | `distance` | Number | `10` |  distance of eye from center |
 | `dPhi` | Number | `0` | current phi inertia of camera |
 | `dTheta` | Number | `0` | current theta inertia of camera |
-| `enablePan` | Boolean | `true` | allow panning |
-| `enablePivot` | Boolean | `true` | allow pivoting (yaw and pitch) of view |
-| `enableRotation` | Boolean | `true` | allow rotation view |
-| `enableZoom` | Boolean | `true` | allow zooming of view |
 | `far` | Number | `100` | far clipping plane |
 | `fovY` | Number | `π / 4` | field of view in the vertical direction, in radians |
 | `near` | Number | `0.1` | near clipping plane |
@@ -99,14 +105,12 @@ The returned camera contains a `.state` property which contains the following st
 | `phi` | Number | `0` | azimuthal angle of camera |
 | `pitch` | Number | `0` | current amount to pitch at next draw, in radians |
 | `rotationCenter` | vec3 | `[0, 0, 0]` | point about which the view rotates
-| `rotationSpeed` | Number | `1.0` | Speed of rotation interaction |
 | `rotationDecayTime` | Number | `100` | half life of rotation inertia in ms |
 | `rotateAboutCenter` | Boolean | `false` | If false, rotate about `rotationCenter`, otherwise rotates about the current view center. |
 | `theta` | Number | `0` | horizontal rotation of camera |
 | `up` | vec3 | `[0, 1, 0]` | vertical direction |
-| `wheelSpeed` | Number | `1.0` | Speed of mouse wheel interaction |
-| `x0` | Number | `null` | current horizontal location of interaction, in pixels |
-| `y0` | Number | `null` | current vertical location of interaction, in pixels |
+| `mouseX` | Number | `null` | current horizontal location of interaction, in pixels |
+| `mouseY` | Number | `null` | current vertical location of interaction, in pixels |
 | `yaw` | Number | `0` | current amount to yaw at next draw, in radians |
 | `zoom` | Number | `0` | current amount to zoom at next draw (0 = no change) |
 | `zoomDecayTime` | Number | `100` | half life of zooming inertia in ms |
