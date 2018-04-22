@@ -38,6 +38,7 @@
     "html-inject-meta": "^3.0.0",
     "normalized-interaction-events": "^1.1.0"
   },
-  "html-inejct-meta": {
+  "html-inject-meta": {
+    "image": "https://cdn.rawgit.com/StandardCyborg/regl-inertia-camera/d76336d7/img/screenshot.jpg"
   }
 }
