@@ -6,6 +6,7 @@ var vec3RotateY = require('gl-vec3/rotateY');
 var vec3RotateX = require('gl-vec3/rotateX');
 var vec3Equals = require('gl-vec3/equals');
 var vec3Add = require('gl-vec3/add');
+var vec3Set = require('gl-vec3/set');
 var vec3ScaleAndAdd = require('gl-vec3/scaleAndAdd');
 var vec3Copy = require('gl-vec3/copy');
 var vec3Normalize = require('gl-vec3/normalize');
@@ -70,6 +71,10 @@ module.exports = function Camera (regl, opts) {
   camera.height = null;
   camera.aspectRatio = null;
   camera.eye = new Float32Array(3);
+
+  var up = new Float32Array(3);
+  var right = new Float32Array(3);
+  var forward = new Float32Array(3);
 
   var origin = new Float32Array(3);
   var dView = new Float32Array(16);
@@ -172,15 +177,15 @@ module.exports = function Camera (regl, opts) {
     if (Math.abs(state.pitch) > 1e-4) return true;
   }
 
-  function haltViewChange () {
-    state.zoom = 0;
-    state.dTheta = 0;
-    state.dPhi = 0;
-    state.panX = 0;
-    state.panY = 0;
-    state.panZ = 0;
-    state.yaw = 0;
-    state.pitch = 0;
+  function zeroChanges (obj) {
+    obj.zoom = 0;
+    obj.dTheta = 0;
+    obj.dPhi = 0;
+    obj.panX = 0;
+    obj.panY = 0;
+    obj.panZ = 0;
+    obj.yaw = 0;
+    obj.pitch = 0;
   }
 
   function decay (dt) {
@@ -197,32 +202,39 @@ module.exports = function Camera (regl, opts) {
     state.pitch *= rotateDecay;
   }
 
+  // Accumulate changes per-frame since it turns out that Safari dispatches mouse events
+  // more than once per RAF while chrome sticks to strictly once per RAF. How surprising!
+  var accumulator = {};
+  zeroChanges(accumulator);
+
   var ie = interactionEvents(element)
     .on('wheel', function (ev) {
       if (state.enableZoom) {
         var scaleFactor = state.distance * Math.tan(state.fovY * 0.5);
         state.x0 = ((ev.x / camera.width) * 2.0 - 1.0) * camera.aspectRatio * scaleFactor;
         state.y0 = -((ev.y / camera.height) * 2.0 - 1.0) * scaleFactor;
-        state.zoom = Math.exp(ev.dy * 0.002 * state.wheelSpeed) - 1.0;
+        accumulator.zoom += Math.exp(ev.dy * 0.002 * state.wheelSpeed) - 1.0;
         ev.originalEvent.preventDefault();
       }
     }).on('mousemove', function (ev) {
       if (ev.buttons !== 1) return;
+      if (!ev.dragging) return;
 
       if (ev.mods.shift && state.enablePan) {
         var scaleFactor = state.distance * Math.tan(state.fovY * 0.5) / camera.height * 2.0;
-        state.panX = -ev.dx * scaleFactor;
-        state.panY = ev.dy * scaleFactor;
+        accumulator.panX -= ev.dx * scaleFactor;
+        accumulator.panY += ev.dy * scaleFactor;
       } else if (ev.mods.meta && state.enablePivot) {
         var scaleFactor = state.fovY / camera.height;
-        state.yaw = -ev.dx * scaleFactor;
-        state.pitch = ev.dy * scaleFactor;
+        accumulator.yaw -= ev.dx * scaleFactor;
+        accumulator.pitch += ev.dy * scaleFactor;
       } else if (state.enableRotation) {
-        state.dTheta = ev.dx / 200 * state.rotationSpeed;
-        state.dPhi = ev.dy / 200 * state.rotationSpeed;
+        accumulator.dTheta += ev.dx / 200 * state.rotationSpeed;
+        accumulator.dPhi += ev.dy / 200 * state.rotationSpeed;
       }
       ev.originalEvent.preventDefault();
-    }).on('touchstart', function (ev) {
+    })
+    .on('touchstart', function (ev) {
       if (state.enableRotation || state.enablePan || state.enableZoom) {
         ev.originalEvent.preventDefault();
       }
@@ -239,23 +251,25 @@ module.exports = function Camera (regl, opts) {
         ev.originalEvent.preventDefault();
       }
     }).on('touchmove', function (ev) {
-      if (state.enableRotation) {
-        state.dTheta = ev.dx / 200 * state.rotationSpeed;
-        state.dPhi = ev.dy / 200 * state.rotationSpeed;
+      if (ev.dragging && state.enableRotation) {
+        accumulator.dTheta += ev.dx / 200 * state.rotationSpeed;
+        accumulator.dPhi += ev.dy / 200 * state.rotationSpeed;
 
         ev.originalEvent.preventDefault();
       }
     }).on('pinchmove', function (ev) {
+      if (!ev.dragging) return;
+
       var scaleFactor = state.distance * Math.tan(state.fovY * 0.5);
       state.x0 = ((ev.x / camera.width) * 2.0 - 1.0) * camera.aspectRatio * scaleFactor;
       state.y0 = -((ev.y / camera.height) * 2.0 - 1.0) * scaleFactor;
       if (state.enableZoom) {
-        state.zoom = 1 - 0.5 * (ev.zoomx + ev.zoomy); 
+        accumulator.zoom += 1 - 0.5 * (ev.zoomx + ev.zoomy); 
       }
 
       if (state.enablePan) {
-        state.panX = -ev.dx * scaleFactor / camera.height * 2.0;
-        state.panY = ev.dy * scaleFactor / camera.height * 2.0;
+        accumulator.panX -= ev.dx * scaleFactor / camera.height * 2.0;
+        accumulator.panY += ev.dy * scaleFactor / camera.height * 2.0;
       }
 
       if (state.enableZoom || state.enablePan) {
@@ -263,14 +277,19 @@ module.exports = function Camera (regl, opts) {
       }
     });
 
+
   function applyViewChanges (changes) {
+    // Zoom about x0
     mat4Identity(dView);
     if (state.zoomAboutCursor) mat4Translate(dView, dView, [changes.x0, changes.y0, 0]);
     mat4Scale(dView, dView, [1 + changes.zoom, 1 + changes.zoom, 1]);
     if (state.zoomAboutCursor) mat4Translate(dView, dView, [-changes.x0, -changes.y0, 0]);
+    
+    // Pan the view matrix
     dView[12] += changes.panX;
     dView[13] += changes.panY;
 
+    //
     transformMat4(state.center, state.center, camera.view);
     transformMat4(state.center, state.center, dView);
     transformMat4(state.center, state.center, camera.viewInv);
@@ -278,7 +297,7 @@ module.exports = function Camera (regl, opts) {
     if (state.rotateAboutCenter) {
       vec3Copy(state.rotationCenter, state.center);
     }
-
+    
     vec3RotateY(state.center, state.center, state.rotationCenter, -changes.dTheta);
 
     state.distance *= 1 + changes.zoom;
@@ -294,9 +313,9 @@ module.exports = function Camera (regl, opts) {
     vec3RotateY(state.center, state.center, state.rotationCenter, -state.theta);
 
     if (changes.yaw !== 0 || changes.pitch !== 0) {
-      var right = [camera.view[0], camera.view[4], camera.view[8]];
-      var up = [camera.view[1], camera.view[5], camera.view[9]];
-      var forward = [camera.view[2], camera.view[6], camera.view[10]];
+      vec3Set(right, camera.view[0], camera.view[4], camera.view[8]);
+      vec3Set(up, camera.view[1], camera.view[5], camera.view[9]);
+      vec3Set(forward, camera.view[2], camera.view[6], camera.view[10]);
       vec3Normalize(right, right);
       vec3Normalize(up, up);
       vec3Normalize(forward, forward);
@@ -306,13 +325,16 @@ module.exports = function Camera (regl, opts) {
       state.phi -= changes.pitch;
       state.theta += changes.yaw;
     }
-    
+
     computeMatrices();
     taint();
   }
 
+  // Probs overkill, but not a huge deal. Let's just make them configurable since y'know, opinions.
+  // If you dig this far into the code, take special note that you can modify these and respecify
+  // the uniform within this context. I used this to shift the whole view to avoid a side panel by
+  // simply translating the projection matrix.
   var uniforms = {};
-
   uniforms[viewUniformName] = regl.context('view');
   uniforms[projectionUniformName] = regl.context('projection');
   uniforms[eyeUniformName] = regl.context('eye');
@@ -328,6 +350,16 @@ module.exports = function Camera (regl, opts) {
 
   var t0 = null;
   function camera (mergeState, cb) {
+    if (accumulator.zoom) state.zoom = accumulator.zoom;
+    if (accumulator.dTheta) state.dTheta = accumulator.dTheta;
+    if (accumulator.dPhi) state.dPhi = accumulator.dPhi;
+    if (accumulator.panX) state.panX = accumulator.panX;
+    if (accumulator.panY) state.panY = accumulator.panY;
+    if (accumulator.panZ) state.panZ = accumulator.panZ;
+    if (accumulator.yaw) state.yaw = accumulator.yaw;
+    if (accumulator.pitch) state.pitch = accumulator.pitch;
+    zeroChanges(accumulator);
+
     if (!cb) {
       cb = mergeState || {};
     } else {
@@ -342,7 +374,7 @@ module.exports = function Camera (regl, opts) {
     if (viewIsChanging()) {
       applyViewChanges(state);
     } else {
-      haltViewChange();
+      zeroChanges(state);
     }
 
     if (t0 !== null) decay(t - t0);

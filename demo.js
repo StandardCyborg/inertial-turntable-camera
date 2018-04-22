@@ -14,7 +14,7 @@ const regl = require('regl')({
 
 function run (regl) {
   bunny.normals = angleNormals(bunny.cells, bunny.positions);
-  const camera = createCamera(regl, {
+  const camera = window.camera = createCamera(regl, {
     distance: 20,
     center: [0, 4, 0],
   });
@@ -84,7 +84,7 @@ function run (regl) {
     count: bunny.cells.length * 3
   });
 
-  regl.frame(() => {
+  regl.frame(({time}) => {
     camera({
       near: camera.state.distance * 0.01,
       far: camera.state.distance * 2 + 200
