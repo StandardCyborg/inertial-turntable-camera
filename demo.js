@@ -172,12 +172,13 @@ function run (regl) {
     camera.state.fovY = data.fov * Math.PI / 180;
   });
 
-	cpEl.addEventListener('touchstart', e => e.stopPropagation(), false);
-  cpEl.addEventListener('touchend', e => e.stopPropagation(), false);
-  cpEl.addEventListener('touchmove', e => e.stopPropagation(), false);
-  cpEl.addEventListener('touchcancel', e => e.stopPropagation(), false);
-  document.querySelector('.github-corner').addEventListener('touchstart', e => e.stopPropagation(), false);
-  document.querySelector('.github-corner').addEventListener('touchmove', e => e.stopPropagation(), false);
+	cpEl.addEventListener('touchstart', e => e.stopPropagation());
+  cpEl.addEventListener('touchend', e => e.stopPropagation());
+  cpEl.addEventListener('touchmove', e => e.stopPropagation());
+  cpEl.addEventListener('touchcancel', e => e.stopPropagation());
+  document.querySelector('.github-corner').addEventListener('touchstart', e => e.stopPropagation());
+  document.querySelector('.github-corner').addEventListener('touchmove', e => e.stopPropagation());
+  document.querySelector('.github-corner').addEventListener('touchend', e => e.stopPropagation());
 
 
 }
