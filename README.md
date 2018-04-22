@@ -22,7 +22,7 @@ camera(() => {
 });
 ```
 
-See [demo.js][./demo.js] for fully worked example.
+See [demo.js](./demo.js) for fully worked example.
 
 ## Usage
 
