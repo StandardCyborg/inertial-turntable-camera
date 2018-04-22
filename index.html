@@ -50,8 +50,11 @@ function run(regl) {
   var r = 30.0;
   var drawGrid = regl({
     vert: '\n      precision mediump float;\n      attribute vec3 position;\n      varying vec2 p;\n      uniform mat4 projection, view;\n      varying vec3 n;\n      void main () {\n        p = position.xz;\n        gl_Position = projection * view * vec4(position, 1);\n      }',
-    frag: '\n      #extension GL_OES_standard_derivatives : enable\n      precision mediump float;\n      float gridFactor (vec2 parameter, float width, float feather) {\n        float w1 = width - feather * 0.5;\n        vec2 d = fwidth(parameter);\n        vec2 a2 = smoothstep(d * w1, d * (w1 + feather), 0.5 - abs(mod(parameter, 1.0) - 0.5));\n        return min(a2.x, a2.y);\n      }\n      varying vec2 p;\n      varying vec3 n;\n      void main () {\n        float r = length(p);\n        float grid = (1.0 - gridFactor(p, 1.0, 1.0)) * smoothstep(30.0, 0.0, r);\n        if (grid < 0.001) discard;\n        gl_FragColor = vec4(0, 0, 0, 0.5 * grid);\n      }',
+    frag: '\n      #extension GL_OES_standard_derivatives : enable\n      precision mediump float;\n      float gridFactor (vec2 parameter, float width, float feather) {\n        float w1 = width - feather * 0.5;\n        vec2 d = fwidth(parameter);\n        vec2 a2 = smoothstep(d * w1, d * (w1 + feather), 0.5 - abs(mod(parameter, 1.0) - 0.5));\n        return min(a2.x, a2.y);\n      }\n      uniform float lineWidth;\n      varying vec2 p;\n      varying vec3 n;\n      void main () {\n        float r = length(p);\n        float grid = (1.0 - gridFactor(p, lineWidth, 1.0)) * smoothstep(30.0, 0.0, r);\n        if (grid < 0.001) discard;\n        gl_FragColor = vec4(0, 0, 0, 0.5 * grid);\n      }',
     attributes: { position: [-r, 0, -r, r, 0, -r, r, 0, r, -r, 0, r] },
+    uniforms: { lineWidth: function (ctx) {
+        return 0.5 * ctx.pixelRatio;
+      } },
     blend: {
       enable: true,
       func: {

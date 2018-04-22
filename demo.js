@@ -40,15 +40,17 @@ function run (regl) {
         vec2 a2 = smoothstep(d * w1, d * (w1 + feather), 0.5 - abs(mod(parameter, 1.0) - 0.5));
         return min(a2.x, a2.y);
       }
+      uniform float lineWidth;
       varying vec2 p;
       varying vec3 n;
       void main () {
         float r = length(p);
-        float grid = (1.0 - gridFactor(p, 1.0, 1.0)) * smoothstep(30.0, 0.0, r);
+        float grid = (1.0 - gridFactor(p, lineWidth, 1.0)) * smoothstep(30.0, 0.0, r);
         if (grid < 0.001) discard;
         gl_FragColor = vec4(0, 0, 0, 0.5 * grid);
       }`,
     attributes: {position: [-r, 0, -r, r, 0, -r, r, 0, r, -r, 0, r]},
+    uniforms: {lineWidth: ctx => 0.5 * ctx.pixelRatio},
     blend: {
       enable: true,
       func: {
