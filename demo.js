@@ -102,12 +102,13 @@ function run (regl) {
   const cpEl = document.createElement('div');
   document.body.appendChild(cpEl);
   var showHide;
+  var controlWidth = Math.min(360, window.innerWidth);
   if (true) {
     showHide = document.createElement('button');
     showHide.textContent = 'Show/hide controls';
     cpEl.appendChild(showHide);
     showHide.style.display = 'block';
-    showHide.style.width = '360px';
+    showHide.style.width = controlWidth + 'px';
     showHide.style.background = 'rgb(35, 35, 35)';
     showHide.style.border = 'none';
     showHide.style.position = 'relative';
@@ -126,7 +127,7 @@ function run (regl) {
         showHide.style.width = 'auto';
         cpContent.style.display = 'none';
       } else {
-        showHide.style.width = '360px';
+        showHide.style.width = controlWidth + 'px';
         cpContent.style.display = 'block';
       }
     });
@@ -137,7 +138,7 @@ function run (regl) {
 
   const helptext = document.createElement('div');
   helptext.textContent = 'On desktop, drag to rotate; shift + drag to pan; meta + drag to pivot; mouswheel to zoom. On mobile, drag to rotate, pinch to zoom and pan.';
-  helptext.style.width = '360px';
+  helptext.style.width = controlWidth + 'px';
   helptext.style.background = 'rgb(35, 35, 35)';
   helptext.style.color = 'rgb(235, 235, 235)';
   helptext.style.padding = '5px 15px';
@@ -155,7 +156,7 @@ function run (regl) {
     {label: 'rotateAboutCenter', type: 'checkbox', initial: camera.state.rotateAboutCenter},
   ], {
     root: cpContent,
-    width: Math.min(window.innerWidth, 360),
+    width: controlWidth
   }).on('input', function (data) {
     camera.state.zoomAboutCursor = data.zoomAboutCursor;
     camera.state.panDecayTime = data.inertia;
