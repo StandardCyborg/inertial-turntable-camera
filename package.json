@@ -1,7 +1,7 @@
 {
-  "name": "regl-inertia-camera",
-  "version": "1.0.5",
-  "description": "A 3D spherical coordinate camera for regl, for desktop and mobile",
+  "name": "inertial-turntable-camera",
+  "version": "1.0.0",
+  "description": "A 3D spherical coordinates camera, for desktop and mobile",
   "main": "index.js",
   "scripts": {
     "start": "budo demo.js --open --host localhost --live --force-default-index -- -t es2020",
@@ -9,10 +9,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/standardCyborg/regl-inertia-camera"
+    "url": "https://github.com/standardCyborg/inertial-turntable-camera"
   },
   "keywords": [
-    "regl",
     "webgl",
     "gl",
     "camera",
