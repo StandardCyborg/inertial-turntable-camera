@@ -6,7 +6,7 @@
 
 ## Introduction
 
-A 3D spherical coordinate camera with rotation, panning, zooming, and pivoting (i.e. yaw and pitch). Designed to function on desktop and mobile.
+A 3D spherical coordinate camera with rotation, panning, zooming, and pivoting (i.e. yaw and pitch). Designed to function on desktop and mobile. The main feature that requires explanation is that it has a flag to decouple the center of rotation from the center of the view so you can allow people to pan the view but avoid the problem where suddenly you're rotating about some unexpected point in space.
 
 I encourage you to think of this as code which should be harvested, mutilated, and modified as you see fit rather than code that should be refined to emcompass every use case. PRs welcome though!
 
