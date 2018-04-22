@@ -6,6 +6,8 @@
 
 A 3D spherical coordinate camera with rotation, panning, zooming, and pivoting (i.e. yaw and pitch). Designed to function on desktop and mobile.
 
+I encourage you to think of this as code which should be harvested, mutilated, and modified as you see fit rather than code that should be refined to emcompass every use case. PRs welcome though!
+
 ## Example
 
 ```javascript
@@ -43,6 +45,9 @@ The camera may be invoked as:
 
 where `state` is an object containing changes to the camera state variables, defined below, and `callback` is a function invoked within the regl context of the camera. Callback receives `camera.state` as its parameter.
 
+
+#### `camera.*`
+
 The returned camera contains the following _computed_ properties which will be overwritten on every draw frame and so _cannot_ (meaningfully) be modified:
 
 | Camera variable | Type | Meaning |
@@ -55,6 +60,8 @@ The returned camera contains the following _computed_ properties which will be o
 | `view` | mat4 | view matrix |
 | `viewInv` | mat4 | inverese view matrix |
 | `width` | Number | current width of view |
+
+#### `camera.state.*`
 
 The returned camera contains a `.state` property which contains the following state values, all of which may be written directly. On each invocation of `draw` these parameters will be checked for differences and will trigger a dirty camera where applicable so that the view is redrawn automatically.
 
@@ -90,6 +97,9 @@ The returned camera contains a `.state` property which contains the following st
 | `yaw` | Number | `0` | current amount to yaw at next draw, in radians |
 | `zoom` | Number | `0` | current amount to zoom at next draw (0 = no change) |
 | `zoomDecayTime` | Number | `100` | half life of zooming inertia in ms |
+
+
+#### `camera.*()`
 
 Finally, the returned camera contains the following methods:
 
