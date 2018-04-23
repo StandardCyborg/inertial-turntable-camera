@@ -85,7 +85,7 @@ function run (regl) {
     }
   });
 
-  const radiansPerHalfScreenWidth = Math.PI;
+  const radiansPerHalfScreenWidth = Math.PI * 0.5;
 
   interactionEvents(regl._gl.canvas)
     .on('wheel', function (ev) {

@@ -81,7 +81,7 @@ function run(regl) {
     }
   });
 
-  var radiansPerHalfScreenWidth = Math.PI;
+  var radiansPerHalfScreenWidth = Math.PI * 0.5;
 
   interactionEvents(regl._gl.canvas).on('wheel', function (ev) {
     camera.zoom(ev.x, ev.y, Math.exp(-ev.dy) - 1.0);
