@@ -38,6 +38,6 @@
     "gl-vec3": "^1.1.3"
   },
   "html-inject-meta": {
-    "image": "https://cdn.rawgit.com/StandardCyborg/regl-inertia-camera/d76336d7/img/screenshot.jpg"
+    "image": "https://cdn.rawgit.com/StandardCyborg/inertial-turntable-camera/d2b97558/img/screenshot.jpg"
   }
 }
