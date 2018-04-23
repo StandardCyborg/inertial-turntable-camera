@@ -73,7 +73,6 @@ function run (regl) {
 
   const camera = window.camera = createCamera({
     aspectRatio: window.innerWidth / window.innerHeight,
-    element: regl._gl.canvas,
     distance: 20,
     center: [0, 4, 0],
   });
