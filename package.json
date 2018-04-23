@@ -1,7 +1,7 @@
 {
   "name": "inertial-turntable-camera",
-  "version": "1.0.0",
-  "description": "A 3D spherical coordinates camera, for desktop and mobile",
+  "version": "1.0.1",
+  "description": "A 3D spherical coordinates camera with inertia",
   "main": "index.js",
   "scripts": {
     "start": "budo demo.js --open --live --force-default-index -- -t es2020",
