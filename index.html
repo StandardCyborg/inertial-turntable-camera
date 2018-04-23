@@ -41,12 +41,6 @@ var regl = require('regl')({
 
 function run(regl) {
   bunny.normals = angleNormals(bunny.cells, bunny.positions);
-  var camera = window.camera = createCamera({
-    aspectRatio: window.innerWidth / window.innerHeight,
-    element: regl._gl.canvas,
-    distance: 20,
-    center: [0, 4, 0]
-  });
 
   var drawGrid = regl({
     vert: '\n      precision mediump float;\n      attribute vec3 position;\n      varying vec2 p;\n      uniform mat4 projection, view;\n      varying vec3 n;\n      void main () {\n        p = position.xz;\n        gl_Position = projection * view * vec4(position, 1);\n      }',
@@ -69,7 +63,14 @@ function run(regl) {
     count: bunny.cells.length * 3
   });
 
-  setCamera = regl({
+  var camera = window.camera = createCamera({
+    aspectRatio: window.innerWidth / window.innerHeight,
+    element: regl._gl.canvas,
+    distance: 20,
+    center: [0, 4, 0]
+  });
+
+  var setCameraUniforms = regl({
     uniforms: {
       projection: function (ctx, camera) {
         return camera.projection;
@@ -116,7 +117,7 @@ function run(regl) {
       far: camera.state.distance * 2 + 200
     });
 
-    setCamera(camera, function () {
+    setCameraUniforms(camera, function () {
       if (!camera.state.dirty) return;
       regl.clear({ color: [0.8, 0.85, 0.9, 1], depth: 1 });
       drawBunny();
