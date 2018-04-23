@@ -8,7 +8,7 @@
 
 A 3D spherical coordinate camera with rotation, panning, zooming, and pivoting (i.e. yaw and pitch). The main feature that requires explanation is that it has a flag to decouple the center of rotation from the center of the view so you can allow people to pan the view but avoid the problem where suddenly you're rotating about some unexpected point in space.
 
-This module plugs nicely into [regl](https://github.com/regl-project/regl). Coming up with interactions that feed into it as exercise left to the user, though you might try [normalized-interaction-events](https://github.com/rreusser/normalized-interaction-events) and see [demo](./demo.js) for an example.
+This module plugs nicely into [regl](https://github.com/regl-project/regl). Feeding interactions into it is left as an exercise for the developer, though you might try [normalized-interaction-events](https://github.com/rreusser/normalized-interaction-events) and see [demo](./demo.js) for an example.
 
 ## Example
 
