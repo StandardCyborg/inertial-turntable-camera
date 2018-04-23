@@ -84,7 +84,7 @@ function run (regl) {
     }
   });
 
-  const radiansPerScreen = Math.PI;
+  const radiansPerHalfScreenWidth = Math.PI;
 
   interactionEvents(regl._gl.canvas)
     .on('wheel', function (ev) {
@@ -100,8 +100,8 @@ function run (regl) {
         camera.pivot(ev.dx, ev.dy * camera.state.aspectRatio);
       } else {
         camera.rotate(
-          -ev.dx * radiansPerScreen * 0.5,
-          -ev.dy * radiansPerScreen * 0.5 * camera.state.aspectRatio
+          -ev.dx * radiansPerHalfScreenWidth,
+          -ev.dy * radiansPerHalfScreenWidth
         );
       }
       ev.originalEvent.preventDefault();
@@ -109,8 +109,8 @@ function run (regl) {
     .on('touchmove', function (ev) {
       if (!ev.active) return;
       camera.rotate(
-        -ev.dx * radiansPerScreen * 0.5,
-        -ev.dy * radiansPerScreen * 0.5 * camera.state.aspectRatio
+        -ev.dx * radiansPerHalfScreenWidth,
+        -ev.dy * radiansPerHalfScreenWidth
       );
       ev.originalEvent.preventDefault();
     })

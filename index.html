@@ -80,7 +80,7 @@ function run(regl) {
     }
   });
 
-  var radiansPerScreen = Math.PI;
+  var radiansPerHalfScreenWidth = Math.PI;
 
   interactionEvents(regl._gl.canvas).on('wheel', function (ev) {
     camera.zoom(ev.x, ev.y, Math.exp(-ev.dy) - 1.0);
@@ -93,12 +93,12 @@ function run(regl) {
     } else if (ev.mods.meta) {
       camera.pivot(ev.dx, ev.dy * camera.state.aspectRatio);
     } else {
-      camera.rotate(-ev.dx * radiansPerScreen * 0.5, -ev.dy * radiansPerScreen * 0.5 * camera.state.aspectRatio);
+      camera.rotate(-ev.dx * radiansPerHalfScreenWidth, -ev.dy * radiansPerHalfScreenWidth);
     }
     ev.originalEvent.preventDefault();
   }).on('touchmove', function (ev) {
     if (!ev.active) return;
-    camera.rotate(-ev.dx * radiansPerScreen * 0.5, -ev.dy * radiansPerScreen * 0.5 * camera.state.aspectRatio);
+    camera.rotate(-ev.dx * radiansPerHalfScreenWidth, -ev.dy * radiansPerHalfScreenWidth);
     ev.originalEvent.preventDefault();
   }).on('pinchmove', function (ev) {
     if (!ev.active) return;
