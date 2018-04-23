@@ -110,7 +110,7 @@ function run(regl) {
     return ev.originalEvent.preventDefault();
   });
 
-  regl.frame(function ({ time, tick }) {
+  regl.frame(function () {
     camera.update({
       near: camera.state.distance * 0.01,
       far: camera.state.distance * 2 + 200

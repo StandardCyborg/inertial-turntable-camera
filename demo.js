@@ -122,7 +122,7 @@ function run (regl) {
     .on('touchstart', ev => ev.originalEvent.preventDefault())
     .on('pinchstart', ev => ev.originalEvent.preventDefault())
 
-  regl.frame(({time, tick}) => {
+  regl.frame(() => {
     camera.update({
       near: camera.state.distance * 0.01,
       far: camera.state.distance * 2 + 200,
