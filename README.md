@@ -56,11 +56,11 @@ Mark the camera "dirty" so that the next update request will set `camera.state.d
 
 Updates the aspect ratio (width / height) and mark the view dirty.
 
-#### `camera.update(stateChanges)`
+#### `camera.update([stateChanges])`
 
 The update method applies the following sequence of operations:
 
-  1. Applies an object of stateChanges to `camera.state`
+  1. Optionally applies an object of stateChanges to `camera.state`
   2. Applies changes detected in the camera state
   3. Applies batched mouse interactions accumulate since the last update
   4. Updates the view and projection matrices and the eye position
