@@ -44,15 +44,11 @@ See [demo.js](./demo.js) for fully worked example.
 
 ### `camera = require('inertial-turntable-camera')([opts])`
 
-Returns a camera instance which sets camera projection and view matrix context and uniforms. Configuration options are:
-
-| Option | Type | Default | Meaning |
-| ------ | ----- | ------ | ------- |
-| `element` | HTML element | `window` | element to which to attach |
+Returns a camera instance which sets camera projection and view matrix context and uniforms. Options are fed into the initial state and can be modified by modifying `camera.state` or when calling `camera.update`.
 
 ### Methods
 
-##### `camera.taint()`
+#### `camera.taint()`
 
 Mark the camera "dirty" so that the next update request will set `camera.state.dirty = true`, indicating the scene needs to be re-rendered.
 
