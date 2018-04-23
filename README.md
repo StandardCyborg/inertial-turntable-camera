@@ -50,17 +50,17 @@ Returns a camera instance which sets camera projection and view matrix context a
 | ------ | ----- | ------ | ------- |
 | `element` | HTML element | `window` | element to which to attach |
 
-#### Methods
+### Methods
 
 ##### `camera.taint()`
 
 Mark the camera "dirty" so that the next update request will set `camera.state.dirty = true`, indicating the scene needs to be re-rendered.
 
-##### `camera.resize(aspectRatio)`
+#### `camera.resize(aspectRatio)`
 
 Updates the aspect ratio (width / height) and mark the view dirty.
 
-##### `camera.update(stateChanges)`
+#### `camera.update(stateChanges)`
 
 The update method applies the following sequence of operations:
 
@@ -71,7 +71,7 @@ The update method applies the following sequence of operations:
   5. Sets `camera.state.dirty` to indicate whether the scene needs to be re-rendered
 
 
-#### Read-only values: `camera.*`
+### Read-only values: `camera.*`
 
 The returned camera contains the following _computed_ properties which will be overwritten on every draw frame and so _cannot_ (meaningfully) be modified:
 
@@ -83,7 +83,7 @@ The returned camera contains the following _computed_ properties which will be o
 | `view` | mat4 | view matrix |
 | `viewInv` | mat4 | inverese view matrix |
 
-#### Read/writeable state: `camera.state.*`
+### Read/writeable state: `camera.state.*`
 
 The returned camera contains a `.state` property which contains the following state values, all of which may be written directly. On each invocation of `draw` these parameters will be checked for differences and will trigger a dirty camera where applicable so that the view is redrawn automatically.
 
