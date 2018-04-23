@@ -1,27 +1,26 @@
 # inertial-turntable-camera
 
-> A 3D spherical coordinates camera, for desktop and mobile
+> A 3D spherical coordinates camera with inertia
 
 [Live demo](https://standardcyborg.github.io/inertial-turntable-camera/)
 
 ## Introduction
 
-A 3D spherical coordinate camera with rotation, panning, zooming, and pivoting (i.e. yaw and pitch). Designed to function on desktop and mobile. The main feature that requires explanation is that it has a flag to decouple the center of rotation from the center of the view so you can allow people to pan the view but avoid the problem where suddenly you're rotating about some unexpected point in space.
+A 3D spherical coordinate camera with rotation, panning, zooming, and pivoting (i.e. yaw and pitch). The main feature that requires explanation is that it has a flag to decouple the center of rotation from the center of the view so you can allow people to pan the view but avoid the problem where suddenly you're rotating about some unexpected point in space.
 
-I encourage you to think of this as code which should be harvested, mutilated, and modified as you see fit rather than code that should be refined to emcompass every use case. PRs welcome though!
+This module plugs nicely into [regl](https://github.com/regl-project/regl). Coming up with interactions that feed into it as exercise left to the user, though you might try [normalized-interaction-events](https://github.com/rreusser/normalized-interaction-events) and see [demo](./demo.js) for an example.
 
 ## Example
 
 ```javascript
 const camera = require('inertial-turntable-camera')({
-  element: myCanvas,
   phi: 0.5,
   theta: 1,
   distance: 20,
 });
 
 requestAnimationFrame(() => {
-  // Pan slowly to the right by changing state directly
+  // Pan slowly to the right by setting state directly
   camera.state.panX = 0.001;
 
   // Call update to compute the current eye location and view+projection matrices

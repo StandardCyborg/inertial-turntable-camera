@@ -6,7 +6,7 @@ const vec3Copy = require('gl-vec3/copy');
 const interactionEvents = require('normalized-interaction-events');
 const regl = require('regl')({
   extensions: ['oes_standard_derivatives'],
-  pixelRatio: 0.25, //Math.min(1.5, window.devicePixelRatio),
+  pixelRatio: Math.min(1.5, window.devicePixelRatio),
   attributes: {antialias: false},
   onDone: require('fail-nicely')(run)
 });
@@ -84,78 +84,43 @@ function run (regl) {
     }
   });
 
-  const wheelSpeed = 0.002;
-  const rotationSpeed = 0.005;
-  const size = {width: window.innerWidth, height: window.innerHeight};
+  const radiansPerScreen = Math.PI;
 
   interactionEvents(regl._gl.canvas)
     .on('wheel', function (ev) {
-        var scaleFactor = camera.state.distance * Math.tan(camera.state.fovY * 0.5);
-
-        camera.zoom(
-          ((ev.x / size.width) * 2.0 - 1.0) * camera.state.aspectRatio * scaleFactor,
-          -((ev.y / size.height) * 2.0 - 1.0) * scaleFactor,
-          Math.exp(ev.dy * wheelSpeed) - 1.0
-        );
-
-        ev.originalEvent.preventDefault();
+      camera.zoom(ev.x, ev.y, Math.exp(-ev.dy) - 1.0);
+      ev.originalEvent.preventDefault();
     })
     .on('mousemove', function (ev) {
-      if (ev.buttons !== 1) return;
-      if (!ev.dragging) return;
+      if (!ev.active || ev.buttons !== 1) return;
 
       if (ev.mods.shift) {
-        var scaleFactor = camera.state.distance * Math.tan(camera.state.fovY * 0.5) / size.height * 2.0;
-        camera.pan(
-          -ev.dx * scaleFactor,
-          ev.dy * scaleFactor
-        );
+        camera.pan(ev.dx, ev.dy);
       } else if (ev.mods.meta) {
-        var scaleFactor = camera.state.fovY / size.height;
-        camera.pivot(
-          ev.dy * scaleFactor,
-          -ev.dx * scaleFactor
-        );
+        camera.pivot(ev.dx, ev.dy * camera.state.aspectRatio);
       } else {
         camera.rotate(
-          ev.dx * rotationSpeed,
-          ev.dy * rotationSpeed
+          -ev.dx * radiansPerScreen * 0.5,
+          -ev.dy * radiansPerScreen * 0.5 * camera.state.aspectRatio
         );
       }
       ev.originalEvent.preventDefault();
     })
     .on('touchmove', function (ev) {
-      if (ev.dragging) {
-
-        camera.rotate(
-          ev.dx * rotationSpeed,
-          ev.dy * rotationSpeed
-        );
-
-        ev.originalEvent.preventDefault();
-      }
+      if (!ev.active) return;
+      camera.rotate(
+        -ev.dx * radiansPerScreen * 0.5,
+        -ev.dy * radiansPerScreen * 0.5 * camera.state.aspectRatio
+      );
+      ev.originalEvent.preventDefault();
     })
     .on('pinchmove', function (ev) {
-      if (!ev.dragging) return;
-
-      var scaleFactor = camera.state.distance * Math.tan(camera.state.fovY * 0.5);
-
-      camera.zoom(
-        ((ev.x / size.width) * 2.0 - 1.0) * camera.state.aspectRatio * scaleFactor,
-        -((ev.y / size.height) * 2.0 - 1.0) * scaleFactor,
-        1 - 0.5 * (ev.zoomx + ev.zoomy)
-      );
-
-      scaleFactor *= 2.0 / size.height;
-      camera.pan(
-        -ev.dx * scaleFactor,
-        ev.dy * scaleFactor
-      );
+      if (!ev.active) return;
+      camera.zoom(ev.x, ev.y, 1 - ev.zoomx);
+      camera.pan(ev.dx, ev.dy);
     })
     .on('touchstart', ev => ev.originalEvent.preventDefault())
-    .on('touchend',  ev => ev.originalEvent.preventDefault())
     .on('pinchstart', ev => ev.originalEvent.preventDefault())
-    .on('pinchend',  ev => ev.originalEvent.preventDefault());
 
   regl.frame(({time, tick}) => {
     camera.update({
@@ -172,10 +137,17 @@ function run (regl) {
   });
 
   window.addEventListener('resize', function () {
-    size.width = window.innerWidth;
-    size.height = window.innerHeight;
-    camera.resize(size.width / size.height);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    camera.resize(width / height);
   }, false);
+
+
+
+
+
+
+
 
 
 

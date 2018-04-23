@@ -17,10 +17,6 @@ var perspective = require('gl-mat4/perspective');
 
 module.exports = function Camera (opts) {
   opts = opts || {};
-  var element = opts.element || window;
-  var viewUniformName = opts.viewUniformName || "view";
-  var projectionUniformName = opts.viewUniformName || "projection";
-  var eyeUniformName = opts.eyeUniformName || "eye";
 
   // A proxy flag with which we track the dirty state so that it doesn't need
   // an extra method to tell the camera that the scene *has been* rendered.
@@ -231,7 +227,7 @@ module.exports = function Camera (opts) {
     camera.eye[1] = 0;
     camera.eye[2] = state.distance;
     vec3RotateX(camera.eye, camera.eye, origin, -state.phi);
-    vec3RotateY(camera.eye, camera.eye, origin, -state.theta);
+    vec3RotateY(camera.eye, camera.eye, origin, state.theta);
     vec3Add(camera.eye, camera.eye, state.center);
 
     // View + projection
@@ -298,8 +294,9 @@ module.exports = function Camera (opts) {
   zeroChanges(accumulator);
 
   function pan (panX, panY) {
-    accumulator.panX += panX;
-    accumulator.panY += panY;
+    var scaleFactor = camera.state.distance * Math.tan(camera.state.fovY * 0.5) * 2.0;
+    accumulator.panX += panX * state.aspectRatio * scaleFactor;
+    accumulator.panY += panY * scaleFactor;
     return camera;
   }
 
@@ -310,9 +307,10 @@ module.exports = function Camera (opts) {
     return camera;
   }
 
-  function pivot (pitch, yaw) {
-    accumulator.pitch += pitch;
-    accumulator.yaw += yaw;
+  function pivot (yaw, pitch) {
+    var scaleFactor = camera.state.fovY;
+    accumulator.yaw += yaw * scaleFactor * state.aspectRatio;
+    accumulator.pitch += pitch * scaleFactor;
   }
 
   function rotate (dTheta, dPhi) {
@@ -321,13 +319,16 @@ module.exports = function Camera (opts) {
   }
 
   function applyViewChanges (changes) {
+    var zoomScaleFactor;
+
     // Initialize a veiw-space transformation for panning and zooming
     mat4Identity(dView);
 
     // Zoom about the mouse location in view-space
     if (state.zoomAboutCursor) {
-      tmp[0] = changes.mouseX;
-      tmp[1] = changes.mouseY;
+      zoomScaleFactor = state.distance * Math.tan(state.fovY * 0.5);
+      tmp[0] = changes.mouseX * state.aspectRatio * zoomScaleFactor;
+      tmp[1] = changes.mouseY * zoomScaleFactor;
       tmp[2] = 0;
       mat4Translate(dView, dView, tmp);
     }
@@ -338,15 +339,16 @@ module.exports = function Camera (opts) {
     mat4Scale(dView, dView, tmp);
 
     if (state.zoomAboutCursor) {
-      tmp[0] = -changes.mouseX;
-      tmp[1] = -changes.mouseY;
+      zoomScaleFactor = state.distance * Math.tan(state.fovY * 0.5);
+      tmp[0] = -changes.mouseX * state.aspectRatio * zoomScaleFactor;
+      tmp[1] = -changes.mouseY * zoomScaleFactor;
       tmp[2] = 0;
       mat4Translate(dView, dView, tmp);
     }
 
     // Pan the view matrix
-    dView[12] += changes.panX;
-    dView[13] += changes.panY;
+    dView[12] -= changes.panX * 0.5;
+    dView[13] -= changes.panY * 0.5;
 
     // transform into view space, then transfor, then invert again
     transformMat4(state.center, state.center, camera.view);
@@ -367,12 +369,11 @@ module.exports = function Camera (opts) {
 
     var prevTheta = state.theta;
     state.theta += changes.dTheta;
-    var dTheta = state.theta - prevTheta;
+    var dTheta = 0.5 * (state.theta - prevTheta);
 
-    vec3RotateY(state.center, state.center, state.rotationCenter, -dTheta);
-    vec3RotateY(state.center, state.center, state.rotationCenter, state.theta);
+    vec3RotateY(state.center, state.center, state.rotationCenter, dTheta - state.theta);
     vec3RotateX(state.center, state.center, state.rotationCenter, -dPhi);
-    vec3RotateY(state.center, state.center, state.rotationCenter, -state.theta);
+    vec3RotateY(state.center, state.center, state.rotationCenter, state.theta);
 
     if (changes.yaw !== 0 || changes.pitch !== 0) {
       viewRight[0] = camera.view[0];
@@ -390,11 +391,11 @@ module.exports = function Camera (opts) {
       viewForward[2] = camera.view[10];
       vec3Normalize(viewForward, viewForward);
 
-      vec3ScaleAndAdd(state.center, state.center, viewRight, Math.sin(changes.yaw) * state.distance);
-      vec3ScaleAndAdd(state.center, state.center, viewUp, Math.sin(changes.pitch) * state.distance);
-      vec3ScaleAndAdd(state.center, state.center, viewForward, (2 - Math.cos(changes.yaw) - Math.cos(changes.pitch)) * state.distance);
-      state.phi -= changes.pitch;
-      state.theta += changes.yaw;
+      vec3ScaleAndAdd(state.center, state.center, viewRight, -Math.sin(changes.yaw * 0.5) * state.distance);
+      vec3ScaleAndAdd(state.center, state.center, viewUp, -Math.sin(changes.pitch * 0.5) * state.distance);
+      vec3ScaleAndAdd(state.center, state.center, viewForward, (2 - Math.cos(changes.yaw * 0.5) - Math.cos(changes.pitch * 0.5)) * state.distance);
+      state.phi += changes.pitch * 0.5;
+      state.theta += changes.yaw * 0.5;
     }
 
     computeMatrices();
