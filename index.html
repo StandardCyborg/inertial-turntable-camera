@@ -599,7 +599,7 @@ module.exports = function Camera(opts) {
 
     var prevTheta = state.theta;
     state.theta += changes.dTheta;
-    var dTheta = 0.5 * (state.theta - prevTheta);
+    var dTheta = state.theta - prevTheta;
 
     vec3RotateY(state.center, state.center, state.rotationCenter, dTheta - state.theta);
     vec3RotateX(state.center, state.center, state.rotationCenter, -dPhi);
