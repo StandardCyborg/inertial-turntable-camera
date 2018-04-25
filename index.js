@@ -53,8 +53,8 @@ module.exports = function Camera (opts) {
     panX: 0,
     panY: 0,
     panZ: 0,
-		pitch: 0,
-		yaw: 0,
+    pitch: 0,
+    yaw: 0,
     dTheta: 0,
     dPhi: 0,
 
