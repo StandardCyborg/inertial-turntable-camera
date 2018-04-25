@@ -18,11 +18,11 @@ var perspective = require('gl-mat4/perspective');
 module.exports = function Camera (opts) {
   opts = opts || {};
 
-  // A proxy flag with which we track the dirty state so that it doesn't need
+  // A proxy flag with which we track the dirty params so that it doesn't need
   // an extra method to tell the camera that the scene *has been* rendered.
   var willBeDirty = true;
 
-  var state = {
+  var params = {
     aspectRatio: opts.aspectRatio ? opts.aspectRatio : 1,
 
     // Zoom about the cursor as opposed to the center of the scene
@@ -71,19 +71,19 @@ module.exports = function Camera (opts) {
   var t0 = null;
   const camera = {
     update: function (mergeState) {
-      // If we've accumulated interactions, then set them in the state directly.
-      // Alternatively, we could recompute the full state on every single interaction
+      // If we've accumulated interactions, then set them in the params directly.
+      // Alternatively, we could recompute the full params on every single interaction
       // event, but that would result in maybe twice as many full matrix/view updates
       // as could ever be rendered in browsers like Safari that dispatch multiple
       // events per requestAnimationFrame.
-      if (accumulator.zoom) state.zoom = accumulator.zoom;
-      if (accumulator.dTheta) state.dTheta = accumulator.dTheta;
-      if (accumulator.dPhi) state.dPhi = accumulator.dPhi;
-      if (accumulator.panX) state.panX = accumulator.panX;
-      if (accumulator.panY) state.panY = accumulator.panY;
-      if (accumulator.panZ) state.panZ = accumulator.panZ;
-      if (accumulator.yaw) state.yaw = accumulator.yaw;
-      if (accumulator.pitch) state.pitch = accumulator.pitch;
+      if (accumulator.zoom) params.zoom = accumulator.zoom;
+      if (accumulator.dTheta) params.dTheta = accumulator.dTheta;
+      if (accumulator.dPhi) params.dPhi = accumulator.dPhi;
+      if (accumulator.panX) params.panX = accumulator.panX;
+      if (accumulator.panY) params.panY = accumulator.panY;
+      if (accumulator.panZ) params.panZ = accumulator.panZ;
+      if (accumulator.yaw) params.yaw = accumulator.yaw;
+      if (accumulator.pitch) params.pitch = accumulator.pitch;
       zeroChanges(accumulator);
 
       if (mergeState) {
@@ -91,48 +91,44 @@ module.exports = function Camera (opts) {
         // because provided dPhi will zero out dPhi resulting from mouse interaction.
         // It would be better to accumulate mouse pixel changes separately and then
         // add this in afterwards, but since we've accumulated dPhi etc right in the
-        // state, we need to cache this, then merge changes, then add these back in
+        // params, we need to cache this, then merge changes, then add these back in
         // if necessary. Consider this a low-priority cleanup item.
-        var cachedDPhi = state.dPhi;
-        var cachedDTheta = state.dTheta;
-        var cachedZoom = state.zoom;
-        var cachedPanX = state.panX;
-        var cachedPanY = state.panY;
-        var cachedPanZ = state.panZ;
-        var cachedPitch = state.pitch;
-        var cachedYaw = state.yaw;
+        var cachedDPhi = params.dPhi;
+        var cachedDTheta = params.dTheta;
+        var cachedZoom = params.zoom;
+        var cachedPanX = params.panX;
+        var cachedPanY = params.panY;
+        var cachedPanZ = params.panZ;
+        var cachedPitch = params.pitch;
+        var cachedYaw = params.yaw;
 
-        if (mergeState.dirty !== undefined) {
-          willBeDirty = true;
-        }
-
-        // This merges anything and everything in the state vector.
-        Object.assign(state, mergeState);
+        // This merges anything and everything in the params vector.
+        Object.assign(params, mergeState);
 
         // Yup, so add them back in.
-        if (mergeState.dPhi !== undefined) state.dPhi += cachedDPhi;
-        if (mergeState.dTheta !== undefined) state.dTheta += cachedDTheta;
-        if (mergeState.zoom !== undefined) state.zoom += cachedZoom;
-        if (mergeState.panX !== undefined) state.panX += cachedPanX;
-        if (mergeState.panY !== undefined) state.panY += cachedPanY;
-        if (mergeState.panZ !== undefined) state.panZ += cachedPanZ;
-        if (mergeState.pitch !== undefined) state.pitch += cachedPitch;
-        if (mergeState.yaw !== undefined) state.yaw += cachedYaw;
+        if (mergeState.dPhi !== undefined) params.dPhi += cachedDPhi;
+        if (mergeState.dTheta !== undefined) params.dTheta += cachedDTheta;
+        if (mergeState.zoom !== undefined) params.zoom += cachedZoom;
+        if (mergeState.panX !== undefined) params.panX += cachedPanX;
+        if (mergeState.panY !== undefined) params.panY += cachedPanY;
+        if (mergeState.panZ !== undefined) params.panZ += cachedPanZ;
+        if (mergeState.pitch !== undefined) params.pitch += cachedPitch;
+        if (mergeState.yaw !== undefined) params.yaw += cachedYaw;
       }
 
-      // Check for and apply passive changes to the state vector. That is, if you
-      // set camera.state.distance, this will automatically factor in those changes.
-      if (stateVectorHasChanged()) {
+      // Check for and apply passive changes to the params vector. That is, if you
+      // set camera.params.distance, this will automatically factor in those changes.
+      if (paramsVectorHasChanged()) {
         applyStateChanges();
       }
 
       // Check if the view is changing above some threshold tolerance.
       if (viewIsChanging()) {
         // If so, update the view.
-        applyViewChanges(state);
+        applyViewChanges(params);
       } else {
         // If not, fully zero it out.
-        zeroChanges(state);
+        zeroChanges(params);
       }
 
       // Not the highest resolution timer, but we only use it for inertia decay.
@@ -140,27 +136,30 @@ module.exports = function Camera (opts) {
       if (t0 !== null) decay(t - t0);
       t0 = t;
 
-      // Transfer this flag in a subtle way so that camera.state.dirty is writable.
-      state.dirty = willBeDirty;
+      // Transfer this flag in a subtle way so that camera.params.dirty is writable.
+      camera.state.dirty = willBeDirty;
       willBeDirty = false;
 
       storeCurrentState();
     },
     taint: taint,
     resize: resize,
-    state: state,
+    params: params,
     rotate: rotate,
     pivot: pivot,
     pan: pan,
     zoom: zoom,
   };
 
-  camera.projection = new Float32Array(16);
-  camera.viewInv = new Float32Array(16);
-  camera.view = new Float32Array(16);
-  camera.width = null;
-  camera.height = null;
-  camera.eye = new Float32Array(3);
+  camera.state = {
+  };
+
+  camera.state.projection = new Float32Array(16);
+  camera.state.viewInv = new Float32Array(16);
+  camera.state.view = new Float32Array(16);
+  camera.state.width = null;
+  camera.state.height = null;
+  camera.state.eye = new Float32Array(3);
 
   // Vectors used but not exposed. Not they couldn't be, but you can get these
   // from the view matrix just fine.
@@ -171,7 +170,7 @@ module.exports = function Camera (opts) {
   var origin = new Float32Array(3);
   var dView = new Float32Array(16);
 
-  // Track the previous state so that we can detect changes in these parameters
+  // Track the previous params so that we can detect changes in these parameters
   var previousState = {
     up: new Float32Array(3),
     center: new Float32Array(3)
@@ -179,45 +178,45 @@ module.exports = function Camera (opts) {
   storeCurrentState();
 
   function storeCurrentState () {
-    vec3Copy(previousState.up, state.up);
-    vec3Copy(previousState.center, state.center);
-    previousState.near = state.near;
-    previousState.far = state.far;
-    previousState.distance = state.distance;
-    previousState.phi = state.phi;
-    previousState.theta = state.theta;
-    previousState.fovY = state.fovY;
+    vec3Copy(previousState.up, params.up);
+    vec3Copy(previousState.center, params.center);
+    previousState.near = params.near;
+    previousState.far = params.far;
+    previousState.distance = params.distance;
+    previousState.phi = params.phi;
+    previousState.theta = params.theta;
+    previousState.fovY = params.fovY;
   }
 
-  function stateVectorHasChanged () {
-    if (!vec3Equals(state.up, previousState.up)) return true;
-    if (!vec3Equals(state.center, previousState.center)) return true;
-    if (state.near !== previousState.near) return true;
-    if (state.far !== previousState.far) return true;
-    if (state.phi !== previousState.phi) return true;
-    if (state.theta !== previousState.theta) return true;
-    if (state.distance !== previousState.distance) return true;
-    if (state.fovY !== previousState.fovY) return true;
+  function paramsVectorHasChanged () {
+    if (!vec3Equals(params.up, previousState.up)) return true;
+    if (!vec3Equals(params.center, previousState.center)) return true;
+    if (params.near !== previousState.near) return true;
+    if (params.far !== previousState.far) return true;
+    if (params.phi !== previousState.phi) return true;
+    if (params.theta !== previousState.theta) return true;
+    if (params.distance !== previousState.distance) return true;
+    if (params.fovY !== previousState.fovY) return true;
     return false;
   }
 
-  var stateChanges = {};
+  var paramsChanges = {};
   function applyStateChanges () {
-    stateChanges.dPhi = state.phi - previousState.phi;
-    stateChanges.dTheta = state.theta - previousState.theta;
-    stateChanges.zoom = state.distance / previousState.distance - 1;
-    state.theta = previousState.theta;
-    state.distance = previousState.distance;
-    state.phi = previousState.phi;
-    stateChanges.yaw = 0;
-    stateChanges.pitch = 0;
-    stateChanges.panX = 0;
-    stateChanges.panY = 0;
-    stateChanges.panZ = 0;
-    stateChanges.mouseX = 0;
-    stateChanges.mouseY = 0;
+    paramsChanges.dPhi = params.phi - previousState.phi;
+    paramsChanges.dTheta = params.theta - previousState.theta;
+    paramsChanges.zoom = params.distance / previousState.distance - 1;
+    params.theta = previousState.theta;
+    params.distance = previousState.distance;
+    params.phi = previousState.phi;
+    paramsChanges.yaw = 0;
+    paramsChanges.pitch = 0;
+    paramsChanges.panX = 0;
+    paramsChanges.panY = 0;
+    paramsChanges.panZ = 0;
+    paramsChanges.mouseX = 0;
+    paramsChanges.mouseY = 0;
 
-    applyViewChanges(stateChanges);
+    applyViewChanges(paramsChanges);
   }
 
   // The meat of it. Note that this function is intentionally very simple! There must
@@ -225,28 +224,28 @@ module.exports = function Camera (opts) {
   // view, not constructing it.
   function computeMatrices () {
     // Spherical coords
-    camera.eye[0] = 0;
-    camera.eye[1] = 0;
-    camera.eye[2] = state.distance;
-    vec3RotateX(camera.eye, camera.eye, origin, -state.phi);
-    vec3RotateY(camera.eye, camera.eye, origin, state.theta);
-    vec3Add(camera.eye, camera.eye, state.center);
+    camera.state.eye[0] = 0;
+    camera.state.eye[1] = 0;
+    camera.state.eye[2] = params.distance;
+    vec3RotateX(camera.state.eye, camera.state.eye, origin, -params.phi);
+    vec3RotateY(camera.state.eye, camera.state.eye, origin, params.theta);
+    vec3Add(camera.state.eye, camera.state.eye, params.center);
 
     // View + projection
-    lookAt(camera.view, camera.eye, state.center, state.up);
-    perspective(camera.projection, state.fovY, camera.state.aspectRatio, state.near, state.far);
+    lookAt(camera.state.view, camera.state.eye, params.center, params.up);
+    perspective(camera.state.projection, params.fovY, camera.params.aspectRatio, params.near, params.far);
 
     // For convenience, but also because we already use this, so let's just expose it
-    mat4Invert(camera.viewInv, camera.view);
+    mat4Invert(camera.state.viewInv, camera.state.view);
   }
 
-  // Track this not on the state itself so that you can write camera.state.dirty
+  // Track this not on the params itself so that you can write camera.params.dirty
   function taint () {
     willBeDirty = true;
   }
 
   function resize (aspectRatio) {
-    camera.state.aspectRatio = aspectRatio
+    camera.params.aspectRatio = aspectRatio
     computeMatrices();
     taint();
   }
@@ -254,14 +253,14 @@ module.exports = function Camera (opts) {
   // All of these are mosty unitless, proportional, or at least relative to a window
   // size that doesn't change much so that fixed tolerances seem fine.
   function viewIsChanging () {
-    if (Math.abs(state.zoom) > 1e-4) return true;
-    if (Math.abs(state.panX) > 1e-4) return true;
-    if (Math.abs(state.panY) > 1e-4) return true;
-    if (Math.abs(state.panZ) > 1e-4) return true;
-    if (Math.abs(state.dTheta) > 1e-4) return true;
-    if (Math.abs(state.dPhi) > 1e-4) return true;
-    if (Math.abs(state.yaw) > 1e-4) return true;
-    if (Math.abs(state.pitch) > 1e-4) return true;
+    if (Math.abs(params.zoom) > 1e-4) return true;
+    if (Math.abs(params.panX) > 1e-4) return true;
+    if (Math.abs(params.panY) > 1e-4) return true;
+    if (Math.abs(params.panZ) > 1e-4) return true;
+    if (Math.abs(params.dTheta) > 1e-4) return true;
+    if (Math.abs(params.dPhi) > 1e-4) return true;
+    if (Math.abs(params.yaw) > 1e-4) return true;
+    if (Math.abs(params.pitch) > 1e-4) return true;
   }
 
   function zeroChanges (obj) {
@@ -277,17 +276,17 @@ module.exports = function Camera (opts) {
 
   // Exponential decay. Basically time-correct proportional decay.
   function decay (dt) {
-    var panDecay = state.panDecayTime ? Math.exp(-dt / state.panDecayTime / Math.LN2) : 0;
-    var zoomDecay = state.zoomDecayTime ? Math.exp(-dt / state.zoomDecayTime / Math.LN2) : 0;
-    var rotateDecay = state.rotationDecayTime ? Math.exp(-dt / state.rotationDecayTime / Math.LN2) : 0;
-    state.zoom *= zoomDecay;
-    state.panX *= panDecay;
-    state.panY *= panDecay;
-    state.panZ *= panDecay;
-    state.dTheta *= rotateDecay;
-    state.dPhi *= rotateDecay;
-    state.yaw *= rotateDecay;
-    state.pitch *= rotateDecay;
+    var panDecay = params.panDecayTime ? Math.exp(-dt / params.panDecayTime / Math.LN2) : 0;
+    var zoomDecay = params.zoomDecayTime ? Math.exp(-dt / params.zoomDecayTime / Math.LN2) : 0;
+    var rotateDecay = params.rotationDecayTime ? Math.exp(-dt / params.rotationDecayTime / Math.LN2) : 0;
+    params.zoom *= zoomDecay;
+    params.panX *= panDecay;
+    params.panY *= panDecay;
+    params.panZ *= panDecay;
+    params.dTheta *= rotateDecay;
+    params.dPhi *= rotateDecay;
+    params.yaw *= rotateDecay;
+    params.pitch *= rotateDecay;
   }
 
   // Accumulate changes per-frame since it turns out that Safari dispatches mouse events
@@ -296,22 +295,22 @@ module.exports = function Camera (opts) {
   zeroChanges(accumulator);
 
   function pan (panX, panY) {
-    var scaleFactor = camera.state.distance * Math.tan(camera.state.fovY * 0.5) * 2.0;
-    accumulator.panX += panX * state.aspectRatio * scaleFactor;
+    var scaleFactor = camera.params.distance * Math.tan(camera.params.fovY * 0.5) * 2.0;
+    accumulator.panX += panX * params.aspectRatio * scaleFactor;
     accumulator.panY += panY * scaleFactor;
     return camera;
   }
 
   function zoom (mouseX, mouseY, zoom) {
     accumulator.zoom += zoom;
-    state.mouseX = mouseX;
-    state.mouseY = mouseY;
+    params.mouseX = mouseX;
+    params.mouseY = mouseY;
     return camera;
   }
 
   function pivot (yaw, pitch) {
-    var scaleFactor = camera.state.fovY;
-    accumulator.yaw += yaw * scaleFactor * state.aspectRatio;
+    var scaleFactor = camera.params.fovY;
+    accumulator.yaw += yaw * scaleFactor * params.aspectRatio;
     accumulator.pitch += pitch * scaleFactor;
   }
 
@@ -327,9 +326,9 @@ module.exports = function Camera (opts) {
     mat4Identity(dView);
 
     // Zoom about the mouse location in view-space
-    if (state.zoomAboutCursor) {
-      zoomScaleFactor = state.distance * Math.tan(state.fovY * 0.5);
-      tmp[0] = changes.mouseX * state.aspectRatio * zoomScaleFactor;
+    if (params.zoomAboutCursor) {
+      zoomScaleFactor = params.distance * Math.tan(params.fovY * 0.5);
+      tmp[0] = changes.mouseX * params.aspectRatio * zoomScaleFactor;
       tmp[1] = changes.mouseY * zoomScaleFactor;
       tmp[2] = 0;
       mat4Translate(dView, dView, tmp);
@@ -340,9 +339,9 @@ module.exports = function Camera (opts) {
     tmp[2] = 1;
     mat4Scale(dView, dView, tmp);
 
-    if (state.zoomAboutCursor) {
-      zoomScaleFactor = state.distance * Math.tan(state.fovY * 0.5);
-      tmp[0] = -changes.mouseX * state.aspectRatio * zoomScaleFactor;
+    if (params.zoomAboutCursor) {
+      zoomScaleFactor = params.distance * Math.tan(params.fovY * 0.5);
+      tmp[0] = -changes.mouseX * params.aspectRatio * zoomScaleFactor;
       tmp[1] = -changes.mouseY * zoomScaleFactor;
       tmp[2] = 0;
       mat4Translate(dView, dView, tmp);
@@ -353,58 +352,58 @@ module.exports = function Camera (opts) {
     dView[13] -= changes.panY * 0.5;
 
     // transform into view space, then transfor, then invert again
-    transformMat4(state.center, state.center, camera.view);
-    transformMat4(state.center, state.center, dView);
-    transformMat4(state.center, state.center, camera.viewInv);
+    transformMat4(params.center, params.center, camera.state.view);
+    transformMat4(params.center, params.center, dView);
+    transformMat4(params.center, params.center, camera.state.viewInv);
 
     // If rotating about the center of the screen, then copy center -> rotationCenter
-    if (state.rotateAboutCenter) {
-      vec3Copy(state.rotationCenter, state.center);
+    if (params.rotateAboutCenter) {
+      vec3Copy(params.rotationCenter, params.center);
     }
 
-    state.distance *= 1 + changes.zoom;
+    params.distance *= 1 + changes.zoom;
 
-    var prevPhi = state.phi;
-    state.phi += changes.dPhi;
-    state.phi = Math.min(Math.PI * 0.5 - 1e-4, Math.max(-Math.PI * 0.5 + 1e-6, state.phi));
-    var dPhi = state.phi - prevPhi;
+    var prevPhi = params.phi;
+    params.phi += changes.dPhi;
+    params.phi = Math.min(Math.PI * 0.5 - 1e-4, Math.max(-Math.PI * 0.5 + 1e-6, params.phi));
+    var dPhi = params.phi - prevPhi;
 
-    var prevTheta = state.theta;
-    state.theta += changes.dTheta;
-    var dTheta = state.theta - prevTheta;
+    var prevTheta = params.theta;
+    params.theta += changes.dTheta;
+    var dTheta = params.theta - prevTheta;
 
-    vec3RotateY(state.center, state.center, state.rotationCenter, dTheta - state.theta);
-    vec3RotateX(state.center, state.center, state.rotationCenter, -dPhi);
-    vec3RotateY(state.center, state.center, state.rotationCenter, state.theta);
+    vec3RotateY(params.center, params.center, params.rotationCenter, dTheta - params.theta);
+    vec3RotateX(params.center, params.center, params.rotationCenter, -dPhi);
+    vec3RotateY(params.center, params.center, params.rotationCenter, params.theta);
 
     if (changes.yaw !== 0 || changes.pitch !== 0) {
-      viewRight[0] = camera.view[0];
-      viewRight[1] = camera.view[4];
-      viewRight[2] = camera.view[8];
+      viewRight[0] = camera.state.view[0];
+      viewRight[1] = camera.state.view[4];
+      viewRight[2] = camera.state.view[8];
       vec3Normalize(viewRight, viewRight);
 
-      viewUp[0] = camera.view[1];
-      viewUp[1] = camera.view[5];
-      viewUp[2] = camera.view[9];
+      viewUp[0] = camera.state.view[1];
+      viewUp[1] = camera.state.view[5];
+      viewUp[2] = camera.state.view[9];
       vec3Normalize(viewUp, viewUp);
 
-      viewForward[0] = camera.view[2];
-      viewForward[1] = camera.view[6];
-      viewForward[2] = camera.view[10];
+      viewForward[0] = camera.state.view[2];
+      viewForward[1] = camera.state.view[6];
+      viewForward[2] = camera.state.view[10];
       vec3Normalize(viewForward, viewForward);
 
-      vec3ScaleAndAdd(state.center, state.center, viewRight, -Math.sin(changes.yaw * 0.5) * state.distance);
-      vec3ScaleAndAdd(state.center, state.center, viewUp, -Math.sin(changes.pitch * 0.5) * state.distance);
-      vec3ScaleAndAdd(state.center, state.center, viewForward, (2 - Math.cos(changes.yaw * 0.5) - Math.cos(changes.pitch * 0.5)) * state.distance);
-      state.phi += changes.pitch * 0.5;
-      state.theta += changes.yaw * 0.5;
+      vec3ScaleAndAdd(params.center, params.center, viewRight, -Math.sin(changes.yaw * 0.5) * params.distance);
+      vec3ScaleAndAdd(params.center, params.center, viewUp, -Math.sin(changes.pitch * 0.5) * params.distance);
+      vec3ScaleAndAdd(params.center, params.center, viewForward, (2 - Math.cos(changes.yaw * 0.5) - Math.cos(changes.pitch * 0.5)) * params.distance);
+      params.phi += changes.pitch * 0.5;
+      params.theta += changes.yaw * 0.5;
     }
 
     computeMatrices();
     taint();
   }
 
-  resize(camera.state.aspectRatio);
+  resize(camera.params.aspectRatio);
 
   return camera;
 }

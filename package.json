@@ -30,7 +30,7 @@
     "html-inject-github-corner": "^2.1.4",
     "html-inject-meta": "^3.0.0",
     "indexhtmlify": "^1.3.1",
-    "normalized-interaction-events": "^2.0.0",
+    "normalized-interaction-events": "^2.0.1",
     "regl": "^1.3.1"
   },
   "dependencies": {

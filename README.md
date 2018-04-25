@@ -20,17 +20,17 @@ const camera = require('inertial-turntable-camera')({
 });
 
 requestAnimationFrame(() => {
-  // Pan slowly to the right by setting state directly
-  camera.state.panX = 0.001;
+  // Pan slowly to the right by setting params directly
+  camera.params.panX = 0.001;
 
-  // Call update to compute the current eye location and view+projection matrices
-  camera.update({
-    // Otherwise pass state changes here:
+  // Call tick to compute the current eye location and view+projection matrices
+  camera.tick({
+    // Otherwise pass params changes here:
     panX: 0.001
   });
 
-  // camera.view => [...]
-  // camera.projection => [...]
+  // camera.state.view => [...]
+  // camera.state.projection => [...]
 
   if (camera.state.dirty) {
     renderScene();
@@ -44,49 +44,49 @@ See [demo.js](./demo.js) for fully worked example.
 
 ### `camera = require('inertial-turntable-camera')([opts])`
 
-Returns a camera instance which sets camera projection and view matrix context and uniforms. Options are fed into the initial state and can be modified by modifying `camera.state` or when calling `camera.update`.
+Returns a camera instance which sets camera projection and view matrix context and uniforms. Options are fed into the initial params and can be modified by modifying `camera.params` or when calling `camera.tick`.
 
 ### Methods
 
 #### `camera.taint()`
 
-Mark the camera "dirty" so that the next update request will set `camera.state.dirty = true`, indicating the scene needs to be re-rendered.
+Mark the camera "dirty" so that the next tick will set `camera.state.dirty = true`, indicating the scene needs to be re-rendered.
 
 #### `camera.resize(aspectRatio)`
 
 Updates the aspect ratio (width / height) and mark the view dirty.
 
-#### `camera.update([stateChanges])`
+#### `camera.tick([paramsChanges])`
 
-The update method applies the following sequence of operations:
+The tick method applies the following sequence of operations:
 
-  1. Optionally applies an object of stateChanges to `camera.state`
-  2. Applies changes detected in the camera state
+  1. Optionally applies an object of paramsChanges to `camera.params`
+  2. Applies changes detected in the camera params
   3. Applies batched mouse interactions accumulate since the last update
   4. Updates the view and projection matrices and the eye position
   5. Sets `camera.state.dirty` to indicate whether the scene needs to be re-rendered
 
 
-### Read-only values: `camera.*`
+### Read-only values: `camera.state.*`
 
-The returned camera contains the following _computed_ properties which will be overwritten on every draw frame and so _cannot_ (meaningfully) be modified:
+`camera.state` contains the following _computed_ properties so that any changes will be ignored and overwritten.
 
 | Camera variable | Type | Meaning |
 | -------------- | ---- | ------- |
+| `dirty` | Boolean | true when camera view has changed |
 | `eye` | vec3 | location of camera |
 | `projection` | mat4 | projection matrix |
 | `view` | mat4 | view matrix |
 | `viewInv` | mat4 | inverese view matrix |
 
-### Read/writeable state: `camera.state.*`
+### Read/writeable params: `camera.params.*`
 
-The returned camera contains a `.state` property which contains the following state values, all of which may be written directly. On each invocation of `draw` these parameters will be checked for differences and will trigger a dirty camera where applicable so that the view is redrawn automatically.
+The returned camera contains a `params` property which contains the following values, all of which may be written directly. On each invocation of `draw` these parameters will be checked for differences and will trigger a dirty camera where applicable so that the view is redrawn automatically. After checking for changes though, these values may be modified depending on input interactions.
 
 | State variable | Type | Default/Initial | Meaning |
 | -------------- | ---- | ------- | ------- |
 | `aspectRatio` | Number | current aspect ratio |
 | `center` | vec3 | `[0, 0, 0]` | point at the center of the view |
-| `dirty` | Boolean | `true` | true when camera view has changed |
 | `distance` | Number | `10` |  distance of eye from center |
 | `dPhi` | Number | `0` | current phi inertia of camera |
 | `dTheta` | Number | `0` | current theta inertia of camera |

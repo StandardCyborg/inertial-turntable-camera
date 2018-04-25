@@ -79,8 +79,8 @@ function run (regl) {
 
   const setCameraUniforms = regl({
     uniforms: {
-      projection: (ctx, camera) => camera.projection,
-      view: (ctx, camera) => camera.view,
+      projection: (ctx, camera) => camera.state.projection,
+      view: (ctx, camera) => camera.state.view,
     }
   });
 
@@ -124,8 +124,8 @@ function run (regl) {
 
   regl.frame(() => {
     camera.update({
-      near: camera.state.distance * 0.01,
-      far: camera.state.distance * 2 + 200,
+      near: camera.params.distance * 0.01,
+      far: camera.params.distance * 2 + 200,
     })
 
     setCameraUniforms(camera, () => {
@@ -205,26 +205,26 @@ function run (regl) {
 
   cpContent.appendChild(helptext)
   controlPanel([
-    {label: 'inertia', type: 'range', min: 0, max: 1000, step: 10, initial: camera.state.panDecayTime},
-    {label: 'fov', type: 'range', min: 5, max: 100, step: 1, initial: Math.round(180 / Math.PI * camera.state.fovY)},
-    {label: 'zoomAboutCursor', type: 'checkbox', initial: camera.state.zoomAboutCursor},
-    {label: 'rotateAboutCenter', type: 'checkbox', initial: camera.state.rotateAboutCenter},
+    {label: 'inertia', type: 'range', min: 0, max: 1000, step: 10, initial: camera.params.panDecayTime},
+    {label: 'fov', type: 'range', min: 5, max: 100, step: 1, initial: Math.round(180 / Math.PI * camera.params.fovY)},
+    {label: 'zoomAboutCursor', type: 'checkbox', initial: camera.params.zoomAboutCursor},
+    {label: 'rotateAboutCenter', type: 'checkbox', initial: camera.params.rotateAboutCenter},
   ], {
     root: cpContent,
     width: controlWidth
   }).on('input', function (data) {
-    camera.state.zoomAboutCursor = data.zoomAboutCursor;
-    camera.state.panDecayTime = data.inertia;
-    camera.state.zoomDecayTime = data.inertia;
-    camera.state.rotationDecayTime = data.inertia;
-    camera.state.rotateAboutCenter = data.rotateAboutCenter;
+    camera.params.zoomAboutCursor = data.zoomAboutCursor;
+    camera.params.panDecayTime = data.inertia;
+    camera.params.zoomDecayTime = data.inertia;
+    camera.params.rotationDecayTime = data.inertia;
+    camera.params.rotateAboutCenter = data.rotateAboutCenter;
 
 		// Hold the view constant as we change the fov
-    var prevYRange = camera.state.distance * Math.tan(camera.state.fovY * 0.5);
-    camera.state.fovY = data.fov * Math.PI / 180.0;
-    camera.state.distance = prevYRange / Math.tan(camera.state.fovY * 0.5);
+    var prevYRange = camera.params.distance * Math.tan(camera.params.fovY * 0.5);
+    camera.params.fovY = data.fov * Math.PI / 180.0;
+    camera.params.distance = prevYRange / Math.tan(camera.params.fovY * 0.5);
 
-    camera.state.fovY = data.fov * Math.PI / 180;
+    camera.params.fovY = data.fov * Math.PI / 180;
   });
 
 	cpEl.addEventListener('touchstart', e => e.stopPropagation());
