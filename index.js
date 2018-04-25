@@ -15,7 +15,11 @@ var mat4Scale = require('gl-mat4/scale');
 var lookAt = require('gl-mat4/lookAt');
 var perspective = require('gl-mat4/perspective');
 
-module.exports = function Camera (opts) {
+// This is a quick and dirty way of avoiding the poles.
+var MAX_PHI = Math.PI * 0.5 - 1e-4;
+var MIN_PHI = -Math.PI * 0.5 + 1e-4;
+
+module.exports = function createCamera (opts) {
   opts = opts || {};
 
   // A proxy flag with which we track the dirty params so that it doesn't need
@@ -365,7 +369,7 @@ module.exports = function Camera (opts) {
 
     var prevPhi = params.phi;
     params.phi += changes.dPhi;
-    params.phi = Math.min(Math.PI * 0.5 - 1e-4, Math.max(-Math.PI * 0.5 + 1e-6, params.phi));
+    params.phi = Math.min(MAX_PHI, Math.max(MIN_PHI, params.phi));
     var dPhi = params.phi - prevPhi;
 
     var prevTheta = params.theta;
@@ -392,10 +396,13 @@ module.exports = function Camera (opts) {
       viewForward[2] = camera.state.view[10];
       vec3Normalize(viewForward, viewForward);
 
+      var clippedPhi = Math.min(MAX_PHI, Math.max(MIN_PHI, params.phi + changes.pitch * 0.5));
+      var clippedPitch = clippedPhi - params.phi;
+
       vec3ScaleAndAdd(params.center, params.center, viewRight, -Math.sin(changes.yaw * 0.5) * params.distance);
-      vec3ScaleAndAdd(params.center, params.center, viewUp, -Math.sin(changes.pitch * 0.5) * params.distance);
-      vec3ScaleAndAdd(params.center, params.center, viewForward, (2 - Math.cos(changes.yaw * 0.5) - Math.cos(changes.pitch * 0.5)) * params.distance);
-      params.phi += changes.pitch * 0.5;
+      vec3ScaleAndAdd(params.center, params.center, viewUp, -Math.sin(clippedPitch) * params.distance);
+      vec3ScaleAndAdd(params.center, params.center, viewForward, (2 - Math.cos(changes.yaw * 0.5) - Math.cos(clippedPitch)) * params.distance);
+      params.phi = clippedPhi;
       params.theta += changes.yaw * 0.5;
     }
 
