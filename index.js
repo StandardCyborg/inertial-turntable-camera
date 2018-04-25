@@ -43,6 +43,8 @@ module.exports = function Camera (opts) {
     zoomDecayTime: opts.zoomDecayTime || 100,
     rotationDecayTime: opts.rotationDecayTime || 100,
 
+    dirty: true,
+
     up: opts.up || new Float32Array([0, 1, 0]),
     center: opts.center || new Float32Array(3),
     rotationCenter: opts.rotationCenter || opts.center && opts.center.slice() || new Float32Array(3),
