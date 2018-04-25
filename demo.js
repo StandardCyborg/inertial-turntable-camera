@@ -123,7 +123,7 @@ function run (regl) {
     .on('pinchstart', ev => ev.originalEvent.preventDefault())
 
   regl.frame(() => {
-    camera.update({
+    camera.tick({
       near: camera.params.distance * 0.01,
       far: camera.params.distance * 2 + 200,
     })

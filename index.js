@@ -74,7 +74,7 @@ module.exports = function createCamera (opts) {
 
   var t0 = null;
   const camera = {
-    update: function (mergeState) {
+    tick: function (mergeState) {
       // If we've accumulated interactions, then set them in the params directly.
       // Alternatively, we could recompute the full params on every single interaction
       // event, but that would result in maybe twice as many full matrix/view updates

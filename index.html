@@ -111,7 +111,7 @@ function run(regl) {
   });
 
   regl.frame(function () {
-    camera.update({
+    camera.tick({
       near: camera.params.distance * 0.01,
       far: camera.params.distance * 2 + 200
     });
@@ -304,7 +304,7 @@ module.exports = function createCamera(opts) {
 
   var t0 = null;
   var camera = {
-    update: function (mergeState) {
+    tick: function (mergeState) {
       // If we've accumulated interactions, then set them in the params directly.
       // Alternatively, we could recompute the full params on every single interaction
       // event, but that would result in maybe twice as many full matrix/view updates
