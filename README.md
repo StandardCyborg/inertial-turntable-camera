@@ -73,7 +73,6 @@ The returned camera contains the following _computed_ properties which will be o
 
 | Camera variable | Type | Meaning |
 | -------------- | ---- | ------- |
-| `dirty` | Boolean | `true` | true when camera view has changed |
 | `eye` | vec3 | location of camera |
 | `projection` | mat4 | projection matrix |
 | `view` | mat4 | view matrix |
@@ -87,6 +86,7 @@ The returned camera contains a `.state` property which contains the following st
 | -------------- | ---- | ------- | ------- |
 | `aspectRatio` | Number | current aspect ratio |
 | `center` | vec3 | `[0, 0, 0]` | point at the center of the view |
+| `dirty` | Boolean | `true` | true when camera view has changed |
 | `distance` | Number | `10` |  distance of eye from center |
 | `dPhi` | Number | `0` | current phi inertia of camera |
 | `dTheta` | Number | `0` | current theta inertia of camera |
