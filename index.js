@@ -73,7 +73,7 @@ module.exports = function createCamera (opts) {
   };
 
   var t0 = null;
-  const camera = {
+  var camera = {
     tick: function (mergeState) {
       // If we've accumulated interactions, then set them in the params directly.
       // Alternatively, we could recompute the full params on every single interaction
